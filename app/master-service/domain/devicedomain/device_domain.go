@@ -3,6 +3,8 @@ package devicedomain
 import (
 	"api/app/master-service/model"
 	"api/app/master-service/repository/devicerepo"
+	"api/lib"
+	"api/utils/resp"
 	"context"
 	"errors"
 	"strings"
@@ -28,11 +30,23 @@ func New(deviceRepository devicerepo.DeviceRepository) DeviceDomain {
 }
 
 func (d *deviceDomain) GetAll(ctx context.Context) ([]model.Device, error) {
-	return d.deviceRepository.FindAll(ctx, 0)
+	devices, err := d.deviceRepository.FindAll(ctx, 0)
+	if err != nil {
+		return nil, resp.ErrorInternal(err.Error())
+	}
+	return devices, nil
 }
 
 func (d *deviceDomain) GetByID(ctx context.Context, id string) (*model.Device, error) {
-	return d.deviceRepository.FindByID(ctx, id)
+	oid, err := lib.HexToObjectID(id)
+	if err != nil {
+		return nil, resp.ErrorNotFound(err.Error())
+	}
+	device, err := d.deviceRepository.GetByID(ctx, oid)
+	if err != nil {
+		return nil, resp.ErrorInternal(err.Error())
+	}
+	return device, nil
 }
 
 func (d *deviceDomain) Create(ctx context.Context, req *model.DeviceCreateRequest) (*model.Device, error) {
@@ -49,7 +63,6 @@ func (d *deviceDomain) Create(ctx context.Context, req *model.DeviceCreateReques
 			return nil, errors.New("device_code already exists")
 		}
 	} else {
-		// Auto-generate device_code: DEV-{last 12 chars of ObjectID}
 		deviceCode = "DEV-" + primitive.NewObjectID().Hex()[12:]
 	}
 
@@ -89,9 +102,27 @@ func (d *deviceDomain) Update(ctx context.Context, id string, req *model.DeviceU
 	if req.IsActive != nil {
 		update["is_active"] = *req.IsActive
 	}
-	return d.deviceRepository.Update(ctx, id, update)
+	oid, err := lib.HexToObjectID(id)
+	if err != nil {
+		return nil, resp.ErrorNotFound(err.Error())
+	}
+	device, err := d.deviceRepository.Update(ctx, oid, update)
+	if err != nil {
+		return nil, resp.ErrorInternal(err.Error())
+	}
+	return device, nil
 }
 
 func (d *deviceDomain) Delete(ctx context.Context, id string) error {
-	return d.deviceRepository.Delete(ctx, id)
+	oid, err := lib.HexToObjectID(id)
+	if err != nil {
+		return resp.ErrorNotFound(err.Error())
+	}
+	if _, err := d.deviceRepository.GetByID(ctx, oid); err != nil {
+		return resp.ErrorNotFound(err.Error())
+	}
+	if err := d.deviceRepository.Delete(ctx, oid); err != nil {
+		return resp.ErrorInternal(err.Error())
+	}
+	return nil
 }

@@ -4,82 +4,126 @@ import (
 	"api/app/master-service/domain/sensordomain"
 	"api/app/master-service/model"
 	"api/utils/resp"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SensorController struct {
-	domain sensordomain.SensorDomain
+	sensorDomain sensordomain.SensorDomain
 }
 
-func New(domain sensordomain.SensorDomain) *SensorController {
-	return &SensorController{domain: domain}
+func New(sensorDomain sensordomain.SensorDomain) *SensorController {
+	return &SensorController{sensorDomain: sensorDomain}
 }
 
-func (ctl *SensorController) CreateForDevice(c *fiber.Ctx) error {
-	deviceIDStr := c.Params("deviceId")
+// GetAll gets all sensors for a device
+// @Summary Get all sensors for a device
+// @Description Get all sensors for a device
+// @Tags Sensor
+// @Accept json
+// @Produce json
+// @Param device_id path string true "Device ID"
+// @Success 200 {object} resp.Response{data=[]model.Sensor} "List of Sensors"
+// @Router /devices/{device_id}/sensors [get]
+// @Security TokenKey
+func (c *SensorController) GetAll(ctx *fiber.Ctx) error {
+	sensors, err := c.sensorDomain.GetAll(ctx.Context(), ctx.Params("device_id"))
+	if err != nil {
+		return resp.ErrorHandler(ctx, resp.ErrorInternal(err.Error()))
+	}
+	return resp.OK(ctx, sensors)
+}
+
+// Create creates a new sensor for a device
+// @Summary Create a new sensor for a device
+// @Description Create a new sensor for a device
+// @Tags Sensor
+// @Accept json
+// @Produce json
+// @Param device_id path string true "Device ID"
+// @Param sensor body model.SensorCreateRequest true "Body Request"
+// @Success 201 {object} resp.Response{data=model.Sensor} "Sensor data"
+// @Router /devices/{device_id}/sensors [post]
+// @Security TokenKey
+func (c *SensorController) Create(ctx *fiber.Ctx) error {
+	deviceIDStr := ctx.Params("device_id")
 	deviceID, err := primitive.ObjectIDFromHex(deviceIDStr)
 	if err != nil {
-		return resp.ErrorHandler(c, resp.ErrorBadRequest("invalid device_id format"))
+		return resp.ErrorHandler(ctx, resp.ErrorBadRequest("invalid device_id format"))
 	}
 
 	req := new(model.SensorCreateRequest)
-	if err := c.BodyParser(req); err != nil {
-		return resp.ErrorHandler(c, resp.ErrorBadRequest(err.Error()))
+	if err := ctx.BodyParser(req); err != nil {
+		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
 	}
 	// Force relationship from route param
 	req.DeviceID = deviceID
 
-	sensor, err := ctl.domain.Create(c.Context(), req)
+	sensor, err := c.sensorDomain.Create(ctx.Context(), req)
 	if err != nil {
-		return resp.ErrorHandler(c, resp.ErrorBadRequest(err.Error()))
+		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
 	}
-	return resp.Created(c, sensor)
+	return resp.Created(ctx, sensor)
 }
 
-func (ctl *SensorController) ListForDevice(c *fiber.Ctx) error {
-	deviceID := c.Params("deviceId")
-	limit := int64(100)
-	if v := c.Query("limit"); v != "" {
-		if i, err := strconv.ParseInt(v, 10, 64); err == nil && i > 0 {
-			limit = i
-		}
-	}
-	sensors, err := ctl.domain.ListByDeviceID(c.Context(), deviceID, limit)
+// GetByID gets a sensor by id
+// @Summary Get a sensor by id
+// @Description Get a sensor by id
+// @Tags Sensor
+// @Accept json
+// @Produce json
+// @Param id path string true "Sensor ID"
+// @Success 200 {object} resp.Response{data=model.Sensor} "Sensor data"
+// @Router /sensors/{id} [get]
+// @Security TokenKey
+func (c *SensorController) GetByID(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	sensor, err := c.sensorDomain.GetByID(ctx.Context(), id)
 	if err != nil {
-		return resp.ErrorHandler(c, resp.ErrorInternal(err.Error()))
+		return resp.ErrorHandler(ctx, resp.ErrorNotFound(err.Error()))
 	}
-	return resp.OK(c, sensors)
+	return resp.OK(ctx, sensor)
 }
 
-func (ctl *SensorController) GetByID(c *fiber.Ctx) error {
-	id := c.Params("id")
-	sensor, err := ctl.domain.GetByID(c.Context(), id)
-	if err != nil {
-		return resp.ErrorHandler(c, resp.ErrorNotFound(err.Error()))
-	}
-	return resp.OK(c, sensor)
-}
-
-func (ctl *SensorController) Update(c *fiber.Ctx) error {
-	id := c.Params("id")
+// Update updates a sensor
+// @Summary Update a sensor
+// @Description Update a sensor
+// @Tags Sensor
+// @Accept json
+// @Produce json
+// @Param id path string true "Sensor ID"
+// @Param sensor body model.SensorUpdateRequest true "Body Request"
+// @Success 200 {object} resp.Response{data=model.Sensor} "Sensor data"
+// @Router /sensors/{id} [put]
+// @Security TokenKey
+func (c *SensorController) Update(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
 	req := new(model.SensorUpdateRequest)
-	if err := c.BodyParser(req); err != nil {
-		return resp.ErrorHandler(c, resp.ErrorBadRequest(err.Error()))
+	if err := ctx.BodyParser(req); err != nil {
+		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
 	}
-	sensor, err := ctl.domain.Update(c.Context(), id, req)
+	sensor, err := c.sensorDomain.Update(ctx.Context(), id, req)
 	if err != nil {
-		return resp.ErrorHandler(c, resp.ErrorBadRequest(err.Error()))
+		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
 	}
-	return resp.OK(c, sensor)
+	return resp.OK(ctx, sensor)
 }
 
-func (ctl *SensorController) Delete(c *fiber.Ctx) error {
-	id := c.Params("id")
-	if err := ctl.domain.Delete(c.Context(), id); err != nil {
-		return resp.ErrorHandler(c, resp.ErrorNotFound(err.Error()))
+// Delete deletes a sensor
+// @Summary Delete a sensor
+// @Description Delete a sensor
+// @Tags Sensor
+// @Accept json
+// @Produce json
+// @Param id path string true "Sensor ID"
+// @Success 200 {object} resp.Response "Success"
+// @Router /sensors/{id} [delete]
+// @Security TokenKey
+func (c *SensorController) Delete(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	if err := c.sensorDomain.Delete(ctx.Context(), id); err != nil {
+		return resp.ErrorHandler(ctx, resp.ErrorNotFound(err.Error()))
 	}
-	return resp.OK(c)
+	return resp.OK(ctx)
 }

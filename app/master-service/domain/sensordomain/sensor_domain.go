@@ -4,41 +4,67 @@ import (
 	"api/app/master-service/model"
 	"api/app/master-service/repository/devicerepo"
 	"api/app/master-service/repository/sensorrepo"
+	"api/lib"
+	"api/utils/resp"
 	"context"
-	"errors"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var ErrInvalidSensor = errors.New("invalid sensor payload")
-
 type SensorDomain interface {
+	GetAll(ctx context.Context, deviceID string) ([]model.Sensor, error)
 	Create(ctx context.Context, req *model.SensorCreateRequest) (*model.Sensor, error)
 	Update(ctx context.Context, id string, req *model.SensorUpdateRequest) (*model.Sensor, error)
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*model.Sensor, error)
-	ListByDeviceID(ctx context.Context, deviceID string, limit int64) ([]model.Sensor, error)
 }
 
 type sensorDomain struct {
-	sensorRepo sensorrepo.SensorRepository
-	deviceRepo devicerepo.DeviceRepository
+	sensorRepository sensorrepo.SensorRepository
+	deviceRepository devicerepo.DeviceRepository
 }
 
-func New(sensorRepo sensorrepo.SensorRepository, deviceRepo devicerepo.DeviceRepository) SensorDomain {
-	return &sensorDomain{sensorRepo: sensorRepo, deviceRepo: deviceRepo}
+func New(sensorRepository sensorrepo.SensorRepository, deviceRepository devicerepo.DeviceRepository) SensorDomain {
+	return &sensorDomain{
+		sensorRepository: sensorRepository,
+		deviceRepository: deviceRepository,
+	}
+}
+
+func (d *sensorDomain) GetAll(ctx context.Context, deviceID string) ([]model.Sensor, error) {
+	oid, err := lib.HexToObjectID(deviceID)
+	if err != nil {
+		return nil, resp.ErrorBadRequest(err.Error())
+	}
+	if _, err := d.deviceRepository.GetByID(ctx, oid); err != nil {
+		return nil, resp.ErrorNotFound(err.Error())
+	}
+	sensors, err := d.sensorRepository.GetByDeviceID(ctx, oid, 100)
+	if err != nil {
+		return nil, resp.ErrorNotFound(err.Error())
+	}
+	return sensors, nil
+}
+
+func (d *sensorDomain) GetByID(ctx context.Context, id string) (*model.Sensor, error) {
+	oid, err := lib.HexToObjectID(id)
+	if err != nil {
+		return nil, resp.ErrorNotFound(err.Error())
+	}
+	sensor, err := d.sensorRepository.GetByID(ctx, oid)
+	if err != nil {
+		return nil, resp.ErrorInternal(err.Error())
+	}
+	return sensor, nil
 }
 
 func (d *sensorDomain) Create(ctx context.Context, req *model.SensorCreateRequest) (*model.Sensor, error) {
 	if req.DeviceID.IsZero() || strings.TrimSpace(req.Name) == "" {
-		return nil, ErrInvalidSensor
+		return nil, resp.ErrorBadRequest("invalid request")
 	}
-	// Ensure device exists (convert ObjectID to hex string for lookup)
-	deviceIDHex := req.DeviceID.Hex()
-	if _, err := d.deviceRepo.FindByID(ctx, deviceIDHex); err != nil {
-		return nil, err
+	if _, err := d.deviceRepository.GetByID(ctx, req.DeviceID); err != nil {
+		return nil, resp.ErrorNotFound(err.Error())
 	}
 	s := &model.Sensor{
 		DeviceID: req.DeviceID,
@@ -46,16 +72,16 @@ func (d *sensorDomain) Create(ctx context.Context, req *model.SensorCreateReques
 		Unit:     strings.TrimSpace(req.Unit),
 		Type:     strings.TrimSpace(req.Type),
 	}
-	if err := d.sensorRepo.Create(ctx, s); err != nil {
-		return nil, err
+	if err := d.sensorRepository.Create(ctx, s); err != nil {
+		return nil, resp.ErrorInternal(err.Error())
 	}
 	return s, nil
 }
 
 func (d *sensorDomain) Update(ctx context.Context, id string, req *model.SensorUpdateRequest) (*model.Sensor, error) {
-	oid, err := parseObjectID(id)
+	oid, err := lib.HexToObjectID(id)
 	if err != nil {
-		return nil, err
+		return nil, resp.ErrorNotFound(err.Error())
 	}
 	update := bson.M{}
 	if req.Name != nil {
@@ -67,29 +93,25 @@ func (d *sensorDomain) Update(ctx context.Context, id string, req *model.SensorU
 	if req.Type != nil {
 		update["type"] = strings.TrimSpace(*req.Type)
 	}
-	return d.sensorRepo.Update(ctx, oid, update)
+
+	sensor, err := d.sensorRepository.Update(ctx, oid, update)
+	if err != nil {
+		return nil, resp.ErrorInternal(err.Error())
+	}
+
+	return sensor, nil
 }
 
 func (d *sensorDomain) Delete(ctx context.Context, id string) error {
-	oid, err := parseObjectID(id)
+	oid, err := lib.HexToObjectID(id)
 	if err != nil {
-		return err
+		return resp.ErrorNotFound(err.Error())
 	}
-	return d.sensorRepo.Delete(ctx, oid)
-}
-
-func (d *sensorDomain) GetByID(ctx context.Context, id string) (*model.Sensor, error) {
-	oid, err := parseObjectID(id)
-	if err != nil {
-		return nil, err
+	if _, err := d.sensorRepository.GetByID(ctx, oid); err != nil {
+		return resp.ErrorNotFound(err.Error())
 	}
-	return d.sensorRepo.FindByID(ctx, oid)
-}
-
-func (d *sensorDomain) ListByDeviceID(ctx context.Context, deviceID string, limit int64) ([]model.Sensor, error) {
-	return d.sensorRepo.FindByDeviceID(ctx, deviceID, limit)
-}
-
-func parseObjectID(hex string) (primitive.ObjectID, error) {
-	return primitive.ObjectIDFromHex(strings.TrimSpace(hex))
+	if err := d.sensorRepository.Delete(ctx, oid); err != nil {
+		return resp.ErrorInternal(err.Error())
+	}
+	return nil
 }

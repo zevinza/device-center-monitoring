@@ -32,7 +32,7 @@ func init() {
 // @contact.email armadamuhammads@gmail.com
 // @host localhost:8000
 // @schemes http
-// @BasePath /api/v1
+// @BasePath /api/v1/master
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
@@ -57,8 +57,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if module.Service.QueueConsumer != nil {
-		go module.Service.QueueConsumer.Start(ctx)
+	if module.Service.QueueConsumerService != nil {
+		go module.Service.QueueConsumerService.Start(ctx)
 		log.Println("Queue consumer started")
 	}
 

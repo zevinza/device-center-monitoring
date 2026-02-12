@@ -15,11 +15,11 @@ import (
 
 type DeviceRepository interface {
 	FindAll(ctx context.Context, limit int64) ([]model.Device, error)
-	FindByID(ctx context.Context, id string) (*model.Device, error)
+	GetByID(ctx context.Context, id primitive.ObjectID) (*model.Device, error)
 	FindByCode(ctx context.Context, deviceCode string) (*model.Device, error)
 	Create(ctx context.Context, device *model.Device) error
-	Update(ctx context.Context, id string, update bson.M) (*model.Device, error)
-	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, id primitive.ObjectID, update bson.M) (*model.Device, error)
+	Delete(ctx context.Context, id primitive.ObjectID) error
 }
 
 type deviceRepository struct {
@@ -41,16 +41,11 @@ func (r *deviceRepository) Create(ctx context.Context, device *model.Device) err
 	return err
 }
 
-func (r *deviceRepository) Update(ctx context.Context, id string, update bson.M) (*model.Device, error) {
-	oid, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, fmt.Errorf("invalid device id: %w", err)
-	}
-
+func (r *deviceRepository) Update(ctx context.Context, id primitive.ObjectID, update bson.M) (*model.Device, error) {
 	update["updated_at"] = time.Now().UTC()
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	res := r.coll.FindOneAndUpdate(ctx, bson.M{"_id": oid}, bson.M{"$set": update}, opts)
+	res := r.coll.FindOneAndUpdate(ctx, bson.M{"_id": id}, bson.M{"$set": update}, opts)
 	if err := res.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, fmt.Errorf("device not found")
@@ -65,13 +60,8 @@ func (r *deviceRepository) Update(ctx context.Context, id string, update bson.M)
 	return &out, nil
 }
 
-func (r *deviceRepository) Delete(ctx context.Context, id string) error {
-	oid, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return fmt.Errorf("invalid device id: %w", err)
-	}
-
-	res, err := r.coll.DeleteOne(ctx, bson.M{"_id": oid})
+func (r *deviceRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
+	res, err := r.coll.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
 		return err
 	}
@@ -81,14 +71,9 @@ func (r *deviceRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *deviceRepository) FindByID(ctx context.Context, id string) (*model.Device, error) {
-	oid, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, fmt.Errorf("invalid device id: %w", err)
-	}
-
+func (r *deviceRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*model.Device, error) {
 	var out model.Device
-	err = r.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&out)
+	err := r.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&out)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, fmt.Errorf("device not found")

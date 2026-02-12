@@ -5,6 +5,7 @@ import (
 	"api/app/client-service/model"
 	"api/utils/env"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -47,7 +48,7 @@ func main() {
 }
 
 func receiveSensorData(c *fiber.Ctx) error {
-	req := new(model.SensorDataRequest)
+	req := new(model.SensorReceiveRequest)
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
@@ -55,14 +56,22 @@ func receiveSensorData(c *fiber.Ctx) error {
 		})
 	}
 
+	if rand.Intn(100) < 30 {
+		log.Printf("[CLIENT] Failed to receive sensor data: %v", req)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   "Internal server error",
+			"message": "Failed to receive sensor data",
+		})
+	}
+
 	// Log the received data with device and sensor details
 	log.Printf("[CLIENT] Received sensor data:")
-	log.Printf("  ReadingID: %s", req.ReadingID)
+	log.Printf("  ReadingID: %s", req.ID)
 	log.Printf("  Device: %s (Code: %s, ID: %s)", req.Device.Name, req.Device.DeviceCode, req.Device.ID)
 	if req.Sensor != nil {
 		log.Printf("  Sensor: %s (ID: %s, Type: %s)", req.Sensor.Name, req.Sensor.ID, req.Sensor.Type)
 	}
-	log.Printf("  Value: %.2f %s", req.Value, req.Unit)
+	log.Printf("  Value: %s %s", req.Value, req.Sensor.Unit)
 	log.Printf("  Timestamp: %s", req.Timestamp.Format(time.RFC3339))
 
 	// In a real scenario, you would save this to your own storage here

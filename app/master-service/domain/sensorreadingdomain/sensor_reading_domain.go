@@ -46,12 +46,12 @@ func (d *sensorReadingDomain) Ingest(ctx context.Context, req *model.SensorInges
 		return resp.ErrorBadRequest("invalid sensor id")
 	}
 
-	sensor, err := d.sensorRepo.FindByID(ctx, oid)
+	sensor, err := d.sensorRepo.GetByID(ctx, oid)
 	if err != nil {
 		return resp.ErrorNotFound("sensor not found")
 	}
 
-	device, err := d.deviceRepo.FindByID(ctx, sensor.DeviceID.Hex())
+	device, err := d.deviceRepo.GetByID(ctx, sensor.DeviceID)
 	if err != nil {
 		return resp.ErrorNotFound("device not found")
 	}

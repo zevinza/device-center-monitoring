@@ -1,0 +1,456 @@
+basePath: /api/v1/master
+definitions:
+  ErrorMessages:
+    properties:
+      message:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+      type:
+        type: string
+      validator:
+        type: string
+      value: {}
+    type: object
+  Response:
+    properties:
+      code:
+        type: integer
+      count:
+        type: integer
+      data: {}
+      error_code:
+        type: string
+      error_messages:
+        items:
+          $ref: '#/definitions/ErrorMessages'
+        type: array
+      message:
+        type: string
+      page:
+        type: integer
+      status:
+        type: boolean
+      total:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+  model.Device:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      device_code:
+        description: Public identifier for simulators
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      location:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.DeviceCreateRequest:
+    properties:
+      description:
+        type: string
+      device_code:
+        description: Optional, auto-generated if not provided
+        type: string
+      name:
+        type: string
+    type: object
+  model.DeviceUpdateRequest:
+    properties:
+      description:
+        type: string
+      device_code:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+    type: object
+  model.Sensor:
+    properties:
+      created_at:
+        type: string
+      device_id:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      type:
+        type: string
+      unit:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.SensorCreateRequest:
+    properties:
+      device_id:
+        type: string
+      name:
+        type: string
+      type:
+        type: string
+      unit:
+        type: string
+    type: object
+  model.SensorIngestRequest:
+    properties:
+      sensor_id:
+        type: string
+      timestamp:
+        type: string
+      value:
+        type: string
+    required:
+    - sensor_id
+    - value
+    type: object
+  model.SensorUpdateRequest:
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+      unit:
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact:
+    email: armadamuhammads@gmail.com
+    name: Armada Muhammad Siswanto
+  description: API Documentation
+  title: API
+  version: 1.0.0
+paths:
+  /devices:
+    get:
+      consumes:
+      - application/json
+      description: Get all devices
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of Devices
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Device'
+                  type: array
+              type: object
+      security:
+      - TokenKey: []
+      summary: Get all devices
+      tags:
+      - Device
+    post:
+      consumes:
+      - application/json
+      description: Create a new device
+      parameters:
+      - description: Body Request
+        in: body
+        name: device
+        required: true
+        schema:
+          $ref: '#/definitions/model.DeviceCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Device data
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Device'
+              type: object
+      security:
+      - TokenKey: []
+      summary: Create a new device
+      tags:
+      - Device
+  /devices/{device_id}/sensors:
+    get:
+      consumes:
+      - application/json
+      description: Get all sensors for a device
+      parameters:
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of Sensors
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Sensor'
+                  type: array
+              type: object
+      security:
+      - TokenKey: []
+      summary: Get all sensors for a device
+      tags:
+      - Sensor
+    post:
+      consumes:
+      - application/json
+      description: Create a new sensor for a device
+      parameters:
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      - description: Body Request
+        in: body
+        name: sensor
+        required: true
+        schema:
+          $ref: '#/definitions/model.SensorCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Sensor data
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Sensor'
+              type: object
+      security:
+      - TokenKey: []
+      summary: Create a new sensor for a device
+      tags:
+      - Sensor
+  /devices/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a device
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Response'
+      security:
+      - TokenKey: []
+      summary: Delete a device
+      tags:
+      - Device
+    get:
+      consumes:
+      - application/json
+      description: Get a device by ID
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Device data
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Device'
+              type: object
+      security:
+      - TokenKey: []
+      summary: Get a device by ID
+      tags:
+      - Device
+    put:
+      consumes:
+      - application/json
+      description: Update a device
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Body Request
+        in: body
+        name: device
+        required: true
+        schema:
+          $ref: '#/definitions/model.DeviceUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Device data
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Device'
+              type: object
+      security:
+      - TokenKey: []
+      summary: Update a device
+      tags:
+      - Device
+  /sensors/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a sensor
+      parameters:
+      - description: Sensor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Response'
+      security:
+      - TokenKey: []
+      summary: Delete a sensor
+      tags:
+      - Sensor
+    get:
+      consumes:
+      - application/json
+      description: Get a sensor by id
+      parameters:
+      - description: Sensor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sensor data
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Sensor'
+              type: object
+      security:
+      - TokenKey: []
+      summary: Get a sensor by id
+      tags:
+      - Sensor
+    put:
+      consumes:
+      - application/json
+      description: Update a sensor
+      parameters:
+      - description: Sensor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Body Request
+        in: body
+        name: sensor
+        required: true
+        schema:
+          $ref: '#/definitions/model.SensorUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sensor data
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Sensor'
+              type: object
+      security:
+      - TokenKey: []
+      summary: Update a sensor
+      tags:
+      - Sensor
+  /sensors/ingest:
+    post:
+      consumes:
+      - application/json
+      description: Ingest a sensor reading
+      parameters:
+      - description: Sensor reading data
+        in: body
+        name: sensor_reading
+        required: true
+        schema:
+          $ref: '#/definitions/model.SensorIngestRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Response'
+      security:
+      - TokenKey: []
+      summary: Ingest a sensor reading
+      tags:
+      - Sensor Ingest
+schemes:
+- http
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  TokenKey:
+    in: header
+    name: X-API-Key
+    type: apiKey
+swagger: "2.0"

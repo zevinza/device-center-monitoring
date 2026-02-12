@@ -26,8 +26,8 @@ func Init() Module {
 
 	repositories := InitRepositories(mdb)
 	domains := InitDomains(repositories, mongoClient, Redis)
-	controllers := InitControllers(domains)
 	services := InitServices(repositories, Redis)
+	controllers := InitControllers(domains)
 
 	return Module{
 		Controller: controllers,
@@ -39,9 +39,9 @@ func Init() Module {
 
 func InitControllers(domains Domain) Controller {
 	return Controller{
-		Device:       devicectrl.New(domains.Device),
-		Sensor:       sensorctrl.New(domains.Sensor),
-		SensorIngest: sensorctrl.NewSensorIngestController(domains.SensorReading),
+		DeviceController:       devicectrl.New(domains.DeviceDomain),
+		SensorController:       sensorctrl.New(domains.SensorDomain),
+		SensorIngestController: sensorctrl.NewSensorIngestController(domains.SensorReadingDomain),
 	}
 }
 
@@ -58,22 +58,27 @@ func InitDomains(repositories Repository, db *mongo.Client, rdb *redis.Client) D
 	queue := queue.NewRedisQueue(rdb, qName, dlqName)
 
 	return Domain{
-		Device:        devicedomain.New(repositories.Device),
-		Sensor:        sensordomain.New(repositories.Sensor, repositories.Device),
-		SensorReading: sensorreadingdomain.New(repositories.SensorReading, repositories.Device, repositories.Sensor, queue),
+		DeviceDomain:        devicedomain.New(repositories.DeviceRepository),
+		SensorDomain:        sensordomain.New(repositories.SensorRepository, repositories.DeviceRepository),
+		SensorReadingDomain: sensorreadingdomain.New(repositories.SensorReadingRepository, repositories.DeviceRepository, repositories.SensorRepository, queue),
 	}
 }
 
 func InitRepositories(mdb *mongo.Database) Repository {
 	return Repository{
-		Device:        devicerepo.New(mdb),
-		Sensor:        sensorrepo.New(mdb),
-		SensorReading: sensorreadingrepo.New(mdb),
+		DeviceRepository:        devicerepo.New(mdb),
+		SensorRepository:        sensorrepo.New(mdb),
+		SensorReadingRepository: sensorreadingrepo.New(mdb),
 	}
 }
 
 func InitServices(repositories Repository, rdb *redis.Client) Service {
 	return Service{
-		QueueConsumer: service.NewQueueConsumer(repositories.SensorReading, rdb),
+		QueueConsumerService: service.NewQueueConsumer(
+			repositories.SensorReadingRepository,
+			repositories.DeviceRepository,
+			repositories.SensorRepository,
+			rdb,
+		),
 	}
 }

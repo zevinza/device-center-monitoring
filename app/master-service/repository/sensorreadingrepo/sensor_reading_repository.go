@@ -5,6 +5,7 @@ import (
 	"api/constant"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,8 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-var ErrSensorReadingNotFound = errors.New("sensor reading not found")
 
 type SensorReadingRepository interface {
 	Create(ctx context.Context, reading *model.SensorReading) error
@@ -52,7 +51,7 @@ func (r *sensorReadingRepository) GetByID(ctx context.Context, id primitive.Obje
 	err := r.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&out)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrSensorReadingNotFound
+			return nil, fmt.Errorf("sensor reading not found")
 		}
 		return nil, err
 	}
@@ -70,7 +69,7 @@ func (r *sensorReadingRepository) UpdateStatus(ctx context.Context, id primitive
 		return err
 	}
 	if res.MatchedCount == 0 {
-		return ErrSensorReadingNotFound
+		return fmt.Errorf("sensor reading not found")
 	}
 	return nil
 }
@@ -83,7 +82,7 @@ func (r *sensorReadingRepository) IncrementRetryCount(ctx context.Context, id pr
 	}, opts)
 	if err := res.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return 0, ErrSensorReadingNotFound
+			return 0, fmt.Errorf("sensor reading not found")
 		}
 		return 0, err
 	}

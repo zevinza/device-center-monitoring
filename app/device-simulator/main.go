@@ -2,6 +2,7 @@ package main
 
 import (
 	"api/app/device-simulator/config"
+	"api/app/device-simulator/model"
 	"api/utils/env"
 	"bytes"
 	"encoding/json"
@@ -42,35 +43,18 @@ func main() {
 	}
 }
 
-type BodyRequest struct {
-	DeviceCode *string `json:"device_code,omitempty"` // Optional if sensor_id is provided
-	SensorID   *string `json:"sensor_id,omitempty"`   // Recommended: system infers device from sensor
-	Unit       string  `json:"unit"`
-	Value      float64 `json:"value"`
-}
-
-func createRequestBody() BodyRequest {
-	req := BodyRequest{
-		Unit:  "celsius",
-		Value: rand.Float64() * 100,
-	}
-
-	// If SENSOR_ID is configured, use it (recommended approach)
-	// Otherwise, fall back to DEVICE_CODE (backward compatibility)
-	sensorID := viper.GetString("SENSOR_ID")
-	if sensorID != "" {
-		req.SensorID = &sensorID
-	} else {
-		deviceCode := viper.GetString("DEVICE_CODE")
-		if deviceCode != "" {
-			req.DeviceCode = &deviceCode
-		}
+func createRequestBody() model.SensorIngestRequest {
+	now := time.Now()
+	req := model.SensorIngestRequest{
+		SensorID:  viper.GetString("SENSOR_ID"),
+		Value:     fmt.Sprintf("%f", rand.Float64()*100),
+		Timestamp: &now,
 	}
 
 	return req
 }
 
-func sendRequest(baseURL, endpoint string, body BodyRequest) error {
+func sendRequest(baseURL, endpoint string, body model.SensorIngestRequest) error {
 	url := baseURL + endpoint
 
 	// Marshal request body to JSON
@@ -79,6 +63,8 @@ func sendRequest(baseURL, endpoint string, body BodyRequest) error {
 		log.Printf("Error marshaling request body: %v", err)
 		return err
 	}
+
+	log.Println(string(jsonBody))
 
 	// Create HTTP request
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonBody))

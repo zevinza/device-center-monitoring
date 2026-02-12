@@ -20,23 +20,23 @@ type Module struct {
 }
 
 type Controller struct {
-	Device       *devicectrl.DeviceController
-	Sensor       *sensorctrl.SensorController
-	SensorIngest *sensorctrl.SensorIngestController
+	DeviceController       *devicectrl.DeviceController
+	SensorController       *sensorctrl.SensorController
+	SensorIngestController *sensorctrl.SensorIngestController
 }
 
 type Domain struct {
-	Device        devicedomain.DeviceDomain
-	Sensor        sensordomain.SensorDomain
-	SensorReading sensorreadingdomain.SensorReadingDomain
+	DeviceDomain        devicedomain.DeviceDomain
+	SensorDomain        sensordomain.SensorDomain
+	SensorReadingDomain sensorreadingdomain.SensorReadingDomain
 }
 
 type Repository struct {
-	Device        devicerepo.DeviceRepository
-	Sensor        sensorrepo.SensorRepository
-	SensorReading sensorreadingrepo.SensorReadingRepository
+	DeviceRepository        devicerepo.DeviceRepository
+	SensorRepository        sensorrepo.SensorRepository
+	SensorReadingRepository sensorreadingrepo.SensorReadingRepository
 }
 
 type Service struct {
-	QueueConsumer service.QueueConsumer
+	QueueConsumerService service.QueueConsumer
 }

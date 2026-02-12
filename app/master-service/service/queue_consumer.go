@@ -2,12 +2,15 @@ package service
 
 import (
 	"api/app/master-service/model"
+	"api/app/master-service/repository/devicerepo"
 	"api/app/master-service/repository/sensorreadingrepo"
+	"api/app/master-service/repository/sensorrepo"
 	"api/constant"
 	"api/services/queue"
 	"api/utils/httpreq"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"time"
@@ -23,12 +26,19 @@ type QueueConsumer interface {
 
 type queueConsumer struct {
 	readingRepository sensorreadingrepo.SensorReadingRepository
+	deviceRepository  devicerepo.DeviceRepository
+	sensorRepository  sensorrepo.SensorRepository
 	queue             *queue.RedisQueue
 	maxRetries        int
 	backoffBase       int
 }
 
-func NewQueueConsumer(readingRepository sensorreadingrepo.SensorReadingRepository, rdb *redis.Client) QueueConsumer {
+func NewQueueConsumer(
+	readingRepository sensorreadingrepo.SensorReadingRepository,
+	deviceRepository devicerepo.DeviceRepository,
+	sensorRepository sensorrepo.SensorRepository,
+	rdb *redis.Client,
+) QueueConsumer {
 	qName := viper.GetString("REDIS_QUEUE_NAME")
 	if qName == "" {
 		qName = "sensor_data_queue"
@@ -53,6 +63,8 @@ func NewQueueConsumer(readingRepository sensorreadingrepo.SensorReadingRepositor
 		queue:             queue.NewRedisQueue(rdb, qName, dlqName),
 		maxRetries:        maxRetries,
 		backoffBase:       backoffBase,
+		deviceRepository:  deviceRepository,
+		sensorRepository:  sensorRepository,
 	}
 }
 
@@ -97,8 +109,32 @@ func (qc *queueConsumer) processMessage(ctx context.Context) {
 		return
 	}
 
+	reading, err := qc.readingRepository.GetByID(ctx, readingID)
+	if err != nil {
+		log.Printf("Error finding reading by id: %v", err)
+		return
+	}
+
+	sensor, err := qc.sensorRepository.GetByID(ctx, reading.SensorID)
+	if err != nil {
+		log.Printf("Error finding sensor by id: %v", err)
+		return
+	}
+
+	device, err := qc.deviceRepository.GetByID(ctx, reading.DeviceID)
+	if err != nil {
+		log.Printf("Error finding device by id: %v", err)
+		return
+	}
+
+	result := model.SensorIngestResult{
+		SensorReading: *reading,
+		Device:        device,
+		Sensor:        sensor,
+	}
+
 	// Attempt to send to client service
-	success := qc.sendToClient(ctx, &msg)
+	success := qc.sendToClient(&result)
 
 	if success {
 		if err := qc.readingRepository.UpdateStatus(ctx, readingID, constant.SensorReadingStatus_Success); err != nil {
@@ -136,9 +172,10 @@ func (qc *queueConsumer) processMessage(ctx context.Context) {
 	}
 }
 
-func (qc *queueConsumer) sendToClient(ctx context.Context, msg *model.QueueMessage) bool {
-	body := model.SensorIngestResult{}
+func (qc *queueConsumer) sendToClient(body *model.SensorIngestResult) bool {
+	url := fmt.Sprintf("http://%s:%d", viper.GetString("CLIENT_HOST"), viper.GetInt("CLIENT_PORT")) + "/receive"
 	resp, err := httpreq.NewClient().
+		Url(url).
 		Headers(map[string]string{
 			"Content-Type": "application/json",
 			"X-API-Key":    viper.GetString("SERVER_SECRET_KEY"),

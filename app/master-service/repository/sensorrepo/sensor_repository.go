@@ -4,6 +4,7 @@ import (
 	"api/app/master-service/model"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,14 +13,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var ErrSensorNotFound = errors.New("sensor not found")
-
 type SensorRepository interface {
+	GetByDeviceID(ctx context.Context, deviceID primitive.ObjectID, limit int64) ([]model.Sensor, error)
+	GetByID(ctx context.Context, id primitive.ObjectID) (*model.Sensor, error)
 	Create(ctx context.Context, sensor *model.Sensor) error
 	Update(ctx context.Context, id primitive.ObjectID, update bson.M) (*model.Sensor, error)
 	Delete(ctx context.Context, id primitive.ObjectID) error
-	FindByID(ctx context.Context, id primitive.ObjectID) (*model.Sensor, error)
-	FindByDeviceID(ctx context.Context, deviceID string, limit int64) ([]model.Sensor, error)
 }
 
 type sensorRepository struct {
@@ -28,6 +27,27 @@ type sensorRepository struct {
 
 func New(db *mongo.Database) SensorRepository {
 	return &sensorRepository{coll: db.Collection("sensors")}
+}
+
+func (r *sensorRepository) GetByDeviceID(ctx context.Context, deviceID primitive.ObjectID, limit int64) ([]model.Sensor, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	cur, err := r.coll.Find(ctx, bson.M{"device_id": deviceID}, options.Find().SetLimit(limit))
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	out := make([]model.Sensor, 0)
+	for cur.Next(ctx) {
+		var s model.Sensor
+		if err := cur.Decode(&s); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, cur.Err()
 }
 
 func (r *sensorRepository) Create(ctx context.Context, sensor *model.Sensor) error {
@@ -50,7 +70,7 @@ func (r *sensorRepository) Update(ctx context.Context, id primitive.ObjectID, up
 	res := r.coll.FindOneAndUpdate(ctx, bson.M{"_id": id}, bson.M{"$set": update}, opts)
 	if err := res.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrSensorNotFound
+			return nil, fmt.Errorf("sensor not found")
 		}
 		return nil, err
 	}
@@ -68,45 +88,19 @@ func (r *sensorRepository) Delete(ctx context.Context, id primitive.ObjectID) er
 		return err
 	}
 	if res.DeletedCount == 0 {
-		return ErrSensorNotFound
+		return fmt.Errorf("sensor not found")
 	}
 	return nil
 }
 
-func (r *sensorRepository) FindByID(ctx context.Context, id primitive.ObjectID) (*model.Sensor, error) {
+func (r *sensorRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*model.Sensor, error) {
 	var out model.Sensor
 	err := r.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&out)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrSensorNotFound
+			return nil, fmt.Errorf("sensor not found")
 		}
 		return nil, err
 	}
 	return &out, nil
-}
-
-func (r *sensorRepository) FindByDeviceID(ctx context.Context, deviceID string, limit int64) ([]model.Sensor, error) {
-	oid, err := primitive.ObjectIDFromHex(deviceID)
-	if err != nil {
-		return nil, err
-	}
-
-	if limit <= 0 {
-		limit = 100
-	}
-	cur, err := r.coll.Find(ctx, bson.M{"device_id": oid}, options.Find().SetLimit(limit))
-	if err != nil {
-		return nil, err
-	}
-	defer cur.Close(ctx)
-
-	out := make([]model.Sensor, 0)
-	for cur.Next(ctx) {
-		var s model.Sensor
-		if err := cur.Decode(&s); err != nil {
-			return nil, err
-		}
-		out = append(out, s)
-	}
-	return out, cur.Err()
 }

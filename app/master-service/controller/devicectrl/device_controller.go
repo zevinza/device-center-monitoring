@@ -16,52 +16,102 @@ func New(domain devicedomain.DeviceDomain) *DeviceController {
 	return &DeviceController{domain: domain}
 }
 
-func (ctl *DeviceController) Create(c *fiber.Ctx) error {
+// GetAll returns all devices
+// @Summary Get all devices
+// @Description Get all devices
+// @Tags Device
+// @Accept json
+// @Produce json
+// @Success 200 {object} resp.Response{data=[]model.Device} "List of Devices"
+// @Router /devices [get]
+// @Security TokenKey
+func (c *DeviceController) GetAll(ctx *fiber.Ctx) error {
+	devices, err := c.domain.GetAll(ctx.Context())
+	if err != nil {
+		return resp.ErrorHandler(ctx, resp.ErrorInternal(err.Error()))
+	}
+	return resp.OK(ctx, devices)
+}
+
+// GetByID returns a device by ID
+// @Summary Get a device by ID
+// @Description Get a device by ID
+// @Tags Device
+// @Accept json
+// @Produce json
+// @Param id path string true "Device ID"
+// @Success 200 {object} resp.Response{data=model.Device} "Device data"
+// @Router /devices/{id} [get]
+// @Security TokenKey
+func (c *DeviceController) GetByID(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	device, err := c.domain.GetByID(ctx.Context(), id)
+	if err != nil {
+		return resp.ErrorHandler(ctx, resp.ErrorNotFound(err.Error()))
+	}
+	return resp.OK(ctx, device)
+}
+
+// Create creates a new device
+// @Summary Create a new device
+// @Description Create a new device
+// @Tags Device
+// @Accept json
+// @Produce json
+// @Param device body model.DeviceCreateRequest true "Body Request"
+// @Success 201 {object} resp.Response{data=model.Device} "Device data"
+// @Router /devices [post]
+// @Security TokenKey
+func (c *DeviceController) Create(ctx *fiber.Ctx) error {
 	req := new(model.DeviceCreateRequest)
-	if err := c.BodyParser(req); err != nil {
-		return resp.ErrorHandler(c, resp.ErrorBadRequest(err.Error()))
+	if err := ctx.BodyParser(req); err != nil {
+		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
 	}
-	device, err := ctl.domain.Create(c.Context(), req)
+	device, err := c.domain.Create(ctx.Context(), req)
 	if err != nil {
-		return resp.ErrorHandler(c, resp.ErrorBadRequest(err.Error()))
+		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
 	}
-	return resp.Created(c, device)
+	return resp.Created(ctx, device)
 }
 
-func (ctl *DeviceController) GetAll(c *fiber.Ctx) error {
-	devices, err := ctl.domain.GetAll(c.Context())
-	if err != nil {
-		return resp.ErrorHandler(c, resp.ErrorInternal(err.Error()))
-	}
-	return resp.OK(c, devices)
-}
-
-func (ctl *DeviceController) GetByID(c *fiber.Ctx) error {
-	id := c.Params("id")
-	device, err := ctl.domain.GetByID(c.Context(), id)
-	if err != nil {
-		return resp.ErrorHandler(c, resp.ErrorNotFound(err.Error()))
-	}
-	return resp.OK(c, device)
-}
-
-func (ctl *DeviceController) Update(c *fiber.Ctx) error {
-	id := c.Params("id")
+// Update updates a device
+// @Summary Update a device
+// @Description Update a device
+// @Tags Device
+// @Accept json
+// @Produce json
+// @Param id path string true "Device ID"
+// @Param device body model.DeviceUpdateRequest true "Body Request"
+// @Success 200 {object} resp.Response{data=model.Device} "Device data"
+// @Router /devices/{id} [put]
+// @Security TokenKey
+func (c *DeviceController) Update(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
 	req := new(model.DeviceUpdateRequest)
-	if err := c.BodyParser(req); err != nil {
-		return resp.ErrorHandler(c, resp.ErrorBadRequest(err.Error()))
+	if err := ctx.BodyParser(req); err != nil {
+		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
 	}
-	device, err := ctl.domain.Update(c.Context(), id, req)
+	device, err := c.domain.Update(ctx.Context(), id, req)
 	if err != nil {
-		return resp.ErrorHandler(c, resp.ErrorBadRequest(err.Error()))
+		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
 	}
-	return resp.OK(c, device)
+	return resp.OK(ctx, device)
 }
 
-func (ctl *DeviceController) Delete(c *fiber.Ctx) error {
-	id := c.Params("id")
-	if err := ctl.domain.Delete(c.Context(), id); err != nil {
-		return resp.ErrorHandler(c, resp.ErrorNotFound(err.Error()))
+// Delete deletes a device
+// @Summary Delete a device
+// @Description Delete a device
+// @Tags Device
+// @Accept json
+// @Produce json
+// @Param id path string true "Device ID"
+// @Success 200 {object} resp.Response "Success"
+// @Router /devices/{id} [delete]
+// @Security TokenKey
+func (c *DeviceController) Delete(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	if err := c.domain.Delete(ctx.Context(), id); err != nil {
+		return resp.ErrorHandler(ctx, resp.ErrorNotFound(err.Error()))
 	}
-	return resp.OK(c)
+	return resp.OK(ctx)
 }
