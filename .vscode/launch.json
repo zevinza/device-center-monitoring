@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch IAM Service",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/app/iam",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "GO111MODULE": "on"
+      }
+    },
+    {
+      "name": "Launch Master Service",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/app/master",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "GO111MODULE": "on"
+      }
+    }
+  ]
+}
+
+
