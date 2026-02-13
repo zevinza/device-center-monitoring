@@ -6,6 +6,7 @@ import (
 	"api/app/master-service/repository/sensorreadingrepo"
 	"api/app/master-service/repository/sensorrepo"
 	"api/constant"
+	"api/lib"
 	"api/services/queue"
 	"api/utils/httpreq"
 	"context"
@@ -101,7 +102,7 @@ func (qc *queueConsumer) processMessage(ctx context.Context) {
 		return
 	}
 
-	sensor, err := qc.sensorRepository.GetByID(ctx, qc.db, reading.SensorID)
+	sensor, err := qc.sensorRepository.GetByID(ctx, qc.db, lib.StrToUUID(reading.SensorID))
 	if err != nil {
 		log.Printf("Error finding sensor by id: %v", err)
 		return

@@ -67,7 +67,7 @@ func (d *sensorDomain) GetByID(ctx context.Context, deviceID, id *uuid.UUID) (*m
 		return nil, resp.ErrorInternal(err.Error())
 	}
 
-	readings, err := d.sensorReadingRepository.GetBySensorID(ctx, lib.StringUUID(sensor.ID))
+	readings, err := d.sensorReadingRepository.GetBySensorID(ctx, lib.StringUUID(sensor.ID), 100)
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, resp.ErrorInternal(err.Error())
 	}

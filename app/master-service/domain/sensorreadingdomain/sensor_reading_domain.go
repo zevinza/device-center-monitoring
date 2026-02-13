@@ -6,6 +6,7 @@ import (
 	"api/app/master-service/repository/sensorreadingrepo"
 	"api/app/master-service/repository/sensorrepo"
 	"api/constant"
+	"api/lib"
 	"api/services/queue"
 	"api/utils/resp"
 	"context"
@@ -50,7 +51,7 @@ func (d *sensorReadingDomain) Ingest(ctx context.Context, req *model.SensorInges
 
 	// Create sensor reading
 	reading := &model.SensorReading{
-		SensorID:   sensor.ID,
+		SensorID:   lib.StringUUID(sensor.ID),
 		Value:      req.Value,
 		Timestamp:  req.Timestamp,
 		Status:     constant.SensorReadingStatus_Pending,

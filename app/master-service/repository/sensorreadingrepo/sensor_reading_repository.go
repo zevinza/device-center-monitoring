@@ -18,7 +18,7 @@ import (
 type SensorReadingRepository interface {
 	Create(ctx context.Context, reading *model.SensorReading) error
 	GetByID(ctx context.Context, id primitive.ObjectID) (*model.SensorReading, error)
-	GetBySensorID(ctx context.Context, sensorID string) ([]model.SensorReading, error)
+	GetBySensorID(ctx context.Context, sensorID string, limit int64) ([]model.SensorReading, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error
 	IncrementRetryCount(ctx context.Context, id primitive.ObjectID) (int, error)
 }
@@ -54,9 +54,12 @@ func (r *sensorReadingRepository) GetByID(ctx context.Context, id primitive.Obje
 	return &out, nil
 }
 
-func (r *sensorReadingRepository) GetBySensorID(ctx context.Context, sensorID string) ([]model.SensorReading, error) {
+func (r *sensorReadingRepository) GetBySensorID(ctx context.Context, sensorID string, limit int64) ([]model.SensorReading, error) {
 	var readings []model.SensorReading
-	cursor, err := r.coll.Find(ctx, bson.M{"sensor_id": sensorID})
+	opts := options.Find().
+		SetLimit(limit).
+		SetSort(bson.M{"timestamp": -1, "created_at": -1})
+	cursor, err := r.coll.Find(ctx, bson.M{"sensor_id": sensorID}, opts)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, fmt.Errorf("sensor readings not found")
