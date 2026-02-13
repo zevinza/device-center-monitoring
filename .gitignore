@@ -33,6 +33,7 @@ go.work.sum
 
 # data directory
 data/
+docs/
 
 # docs directory
 app/master/docs/

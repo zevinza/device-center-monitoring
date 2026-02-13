@@ -29,9 +29,9 @@ func main() {
 	// Health check endpoint
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"service": viper.GetString("NAME"),
-			"status":  "running",
-			"port":    viper.GetInt("PORT"),
+			"service":     viper.GetString("NAME"),
+			"description": viper.GetString("DESCRIPTION"),
+			"status":      "running",
 		})
 	})
 
@@ -39,9 +39,6 @@ func main() {
 	app.Post("/receive", receiveSensorData)
 
 	port := viper.GetString("PORT")
-	if port == "" {
-		port = "8002"
-	}
 
 	log.Printf("Client Service starting on port %s", port)
 	log.Fatal(app.Listen(":" + port))
@@ -64,7 +61,6 @@ func receiveSensorData(c *fiber.Ctx) error {
 		})
 	}
 
-	// Log the received data with device and sensor details
 	log.Printf("[CLIENT] Received sensor data:")
 	log.Printf("  ReadingID: %s", req.ID)
 	log.Printf("  Device: %s (Code: %s, ID: %s)", req.Device.Name, req.Device.DeviceCode, req.Device.ID)
