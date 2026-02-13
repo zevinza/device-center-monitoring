@@ -7,7 +7,7 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/app/master-service",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/app/master-service",
       "env": {
         "GO111MODULE": "on"
       }
@@ -18,7 +18,7 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/app/client-service",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/app/client-service",
       "env": {
         "GO111MODULE": "on"
       }
@@ -29,7 +29,7 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/app/device-simulator",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/app/device-simulator",
       "env": {
         "GO111MODULE": "on"
       }

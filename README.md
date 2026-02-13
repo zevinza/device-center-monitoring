@@ -18,13 +18,17 @@ The system consists of three services:
 
 ## Infrastructure Setup
 
-The project requires MongoDB and Redis. You can start them using Docker Compose:
+The project requires PostgreSQL, MongoDB, and Redis. You can start them using Docker Compose:
 
 ```bash
 docker compose up -d
 ```
 
 This will start:
+- **PostgreSQL** on port `55432`
+  - Username: `postgres`
+  - Password: `postgres`
+  - Database: `postgres`
 - **MongoDB** on port `27017`
   - Username: `admin`
   - Password: `password`
@@ -121,6 +125,10 @@ Each service has its own configuration file in `app/<service-name>/config/enviro
 
 ### Master Service Configuration
 - Port: `8000` (default)
+- PostgreSQL: `localhost:55432`
+  - Database: `postgres`
+  - Username: `postgres`
+  - Password: `postgres`
 - MongoDB: `localhost:27017`
 - Redis: `localhost:6378`
 - API Secret Key: `Fr46VTqmt3j7AjT0hDa` (default)
@@ -173,7 +181,7 @@ device-center-monitoring/
 
 ## Notes
 
-- The master service uses MongoDB for data persistence and Redis for queue management
+- The master service uses PostgreSQL and MongoDB for data persistence, and Redis for queue management
 - Sensor readings are processed asynchronously via Redis queue
 - The device simulator sends sensor data every 3 seconds by default
 - All services use Fiber web framework

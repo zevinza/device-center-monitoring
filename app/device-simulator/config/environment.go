@@ -13,5 +13,5 @@ var Environment = map[string]any{
 	"server_secret_key": "Fr46VTqmt3j7AjT0hDa",
 	"device_code":       "DEVICE-001",
 	"device_name":       "Device 1",
-	"sensor_id":         "65998fe0-4a40-4ffd-875a-d77d3bb72ceb",
+	"sensor_id":         "65998fe0-4a40-4ffd-875a-d77d3bb72cea",
 }

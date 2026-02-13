@@ -47,7 +47,7 @@ func createRequestBody() model.SensorIngestRequest {
 	now := time.Now()
 	req := model.SensorIngestRequest{
 		SensorID:  viper.GetString("SENSOR_ID"),
-		Value:     fmt.Sprintf("%f", rand.Float64()*100),
+		Value:     rand.Float64() * 100,
 		Timestamp: &now,
 	}
 
