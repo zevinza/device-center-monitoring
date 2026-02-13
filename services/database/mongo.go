@@ -1,7 +1,6 @@
 package database
 
 import (
-	"api/migrations"
 	"context"
 	"fmt"
 	"time"
@@ -21,10 +20,6 @@ func ConnectMongo() {
 		client := mongoConnect()
 		if nil != client {
 			Mongo = client
-			// Run migrations if enabled
-			if viper.GetBool("ENABLE_MIGRATION") {
-				mongoMigrate()
-			}
 		}
 	}
 }
@@ -74,15 +69,4 @@ func mongoConnect() *mongo.Client {
 	MongoDatabase = client.Database(database)
 
 	return client
-}
-
-// mongoMigrate runs MongoDB migrations
-func mongoMigrate() {
-	if nil == Mongo {
-		return
-	}
-
-	if err := migrations.RunMongoMigrations(Mongo); err != nil {
-		panic(fmt.Sprintf("Failed to run MongoDB migrations: %v", err))
-	}
 }

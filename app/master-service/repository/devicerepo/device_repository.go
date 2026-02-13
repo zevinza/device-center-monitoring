@@ -2,6 +2,7 @@ package devicerepo
 
 import (
 	"api/app/master-service/model"
+	"api/constant"
 	"context"
 	"errors"
 	"fmt"
@@ -27,7 +28,7 @@ type deviceRepository struct {
 }
 
 func New(db *mongo.Database) DeviceRepository {
-	return &deviceRepository{coll: db.Collection("devices")}
+	return &deviceRepository{coll: db.Collection(constant.Collection_Devices)}
 }
 
 func (r *deviceRepository) Create(ctx context.Context, device *model.Device) error {

@@ -3,19 +3,21 @@ package model
 import (
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // Device is a managed IoT device.
 type Device struct {
-	ID          primitive.ObjectID `bson:"_id" json:"id"`
-	DeviceCode  string             `bson:"device_code" json:"device_code"` // Public identifier for simulators
-	Name        string             `bson:"name" json:"name"`
-	Description string             `bson:"description,omitempty" json:"description,omitempty"`
-	Location    string             `bson:"location,omitempty" json:"location,omitempty"`
-	IsActive    bool               `bson:"is_active" json:"is_active"`
-	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
+	ID          uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	DeviceCode  string          `gorm:"type:varchar(255);uniqueIndex;not null" json:"device_code"` // Public identifier for simulators
+	Name        string          `gorm:"type:varchar(255);not null" json:"name"`
+	Description string          `gorm:"type:text" json:"description,omitempty"`
+	Location    string          `gorm:"type:varchar(255)" json:"location,omitempty"`
+	IsActive    bool            `gorm:"default:true;not null" json:"is_active"`
+	CreatedAt   time.Time       `gorm:"not null" json:"created_at"`
+	UpdatedAt   time.Time       `gorm:"not null" json:"updated_at"`
+	DeletedAt   gorm.DeletedAt  `gorm:"index" json:"-"`
 }
 
 type DeviceCreateRequest struct {

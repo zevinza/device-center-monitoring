@@ -48,13 +48,8 @@ func InitControllers(domains Domain) Controller {
 func InitDomains(repositories Repository, db *mongo.Client, rdb *redis.Client) Domain {
 	// Initialize queue for sensor reading domain
 	qName := viper.GetString("REDIS_QUEUE_NAME")
-	if qName == "" {
-		qName = "sensor_data_queue"
-	}
+
 	dlqName := viper.GetString("REDIS_DLQ_NAME")
-	if dlqName == "" {
-		dlqName = "sensor_data_dlq"
-	}
 	queue := queue.NewRedisQueue(rdb, qName, dlqName)
 
 	return Domain{

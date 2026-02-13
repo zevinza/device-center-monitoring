@@ -26,7 +26,7 @@ type sensorReadingRepository struct {
 }
 
 func New(db *mongo.Database) SensorReadingRepository {
-	return &sensorReadingRepository{coll: db.Collection("sensor_readings")}
+	return &sensorReadingRepository{coll: db.Collection(constant.Collection_SensorReadings)}
 }
 
 func (r *sensorReadingRepository) Create(ctx context.Context, reading *model.SensorReading) error {

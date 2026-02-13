@@ -40,13 +40,7 @@ func NewQueueConsumer(
 	rdb *redis.Client,
 ) QueueConsumer {
 	qName := viper.GetString("REDIS_QUEUE_NAME")
-	if qName == "" {
-		qName = "sensor_data_queue"
-	}
 	dlqName := viper.GetString("REDIS_DLQ_NAME")
-	if dlqName == "" {
-		dlqName = "sensor_data_dlq"
-	}
 
 	maxRetries := viper.GetInt("MAX_RETRIES")
 	if maxRetries <= 0 {

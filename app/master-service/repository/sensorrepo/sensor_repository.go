@@ -2,6 +2,7 @@ package sensorrepo
 
 import (
 	"api/app/master-service/model"
+	"api/constant"
 	"context"
 	"errors"
 	"fmt"
@@ -26,7 +27,7 @@ type sensorRepository struct {
 }
 
 func New(db *mongo.Database) SensorRepository {
-	return &sensorRepository{coll: db.Collection("sensors")}
+	return &sensorRepository{coll: db.Collection(constant.Collection_Sensors)}
 }
 
 func (r *sensorRepository) GetByDeviceID(ctx context.Context, deviceID primitive.ObjectID, limit int64) ([]model.Sensor, error) {

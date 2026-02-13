@@ -3,25 +3,28 @@ package model
 import (
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // Sensor is a managed sensor attached to a device (one device -> many sensors).
 type Sensor struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	DeviceID  primitive.ObjectID `bson:"device_id" json:"device_id"`
-	Name      string             `bson:"name" json:"name"`
-	Unit      string             `bson:"unit" json:"unit"`
-	Type      string             `bson:"type" json:"type"`
-	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
+	ID        uuid.UUID     `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	DeviceID  uuid.UUID     `gorm:"type:uuid;not null;index" json:"device_id"`
+	Device    Device        `gorm:"foreignKey:DeviceID;constraint:OnDelete:CASCADE" json:"-"`
+	Name      string        `gorm:"type:varchar(255);not null" json:"name"`
+	Unit      string        `gorm:"type:varchar(50)" json:"unit"`
+	Type      string        `gorm:"type:varchar(100)" json:"type"`
+	CreatedAt time.Time     `gorm:"not null" json:"created_at"`
+	UpdatedAt time.Time     `gorm:"not null" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type SensorCreateRequest struct {
-	DeviceID primitive.ObjectID `json:"device_id"`
-	Name     string             `json:"name"`
-	Unit     string             `json:"unit"`
-	Type     string             `json:"type"`
+	DeviceID string `json:"device_id"`
+	Name     string `json:"name"`
+	Unit     string `json:"unit"`
+	Type     string `json:"type"`
 }
 
 type SensorUpdateRequest struct {
