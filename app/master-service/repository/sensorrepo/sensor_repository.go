@@ -28,6 +28,14 @@ func New() SensorRepository {
 	}
 }
 
+func (r *sensorRepository) GetAll(ctx context.Context, db *gorm.DB) ([]model.Sensor, error) {
+	var sensors []model.Sensor
+	if err := db.WithContext(ctx).Joins("Device").Joins("Category").Find(&sensors).Error; err != nil {
+		return nil, err
+	}
+	return sensors, nil
+}
+
 func (r *sensorRepository) GetByID(ctx context.Context, db *gorm.DB, id *uuid.UUID) (*model.Sensor, error) {
 	var sensor model.Sensor
 	if err := db.WithContext(ctx).Where("sensor.id = ?", id).Joins("Device").Joins("Category").First(&sensor).Error; err != nil {
@@ -41,7 +49,7 @@ func (r *sensorRepository) GetByID(ctx context.Context, db *gorm.DB, id *uuid.UU
 
 func (r *sensorRepository) GetByDeviceID(ctx context.Context, db *gorm.DB, deviceID *uuid.UUID) ([]model.Sensor, error) {
 	var sensors []model.Sensor
-	query := db.WithContext(ctx).Where("device_id = ?", deviceID).Find(&sensors)
+	query := db.WithContext(ctx).Where("device_id = ?", deviceID).Joins("Device").Joins("Category").Find(&sensors)
 	if query.Error != nil {
 		if errors.Is(query.Error, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("sensors not found")

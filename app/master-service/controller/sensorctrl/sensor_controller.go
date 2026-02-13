@@ -71,11 +71,13 @@ func (c *SensorController) Create(ctx *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Sensor ID"
 // @Param device_id path string true "Device ID"
+// @Param limit query int false "Limit"
 // @Success 200 {object} resp.Response{data=model.Sensor} "Sensor data"
 // @Router /devices/{device_id}/sensors/{id} [get]
 // @Security TokenKey
 func (c *SensorController) GetByID(ctx *fiber.Ctx) error {
-	sensor, err := c.sensorDomain.GetByID(ctx.Context(), lib.StrToUUID(ctx.Params("device_id")), lib.ParamsUUID(ctx))
+	limit := ctx.QueryInt("limit", 10)
+	sensor, err := c.sensorDomain.GetByID(ctx.Context(), int64(limit), lib.StrToUUID(ctx.Params("device_id")), lib.ParamsUUID(ctx))
 	if err != nil {
 		return resp.ErrorHandler(ctx, err)
 	}

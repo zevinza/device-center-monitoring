@@ -19,7 +19,7 @@ import (
 
 type SensorDomain interface {
 	GetAll(ctx context.Context, deviceID *uuid.UUID) ([]model.Sensor, error)
-	GetByID(ctx context.Context, deviceID, id *uuid.UUID) (*model.Sensor, error)
+	GetByID(ctx context.Context, limit int64, deviceID, id *uuid.UUID) (*model.Sensor, error)
 	Create(ctx context.Context, api *model.SensorAPI) (*model.Sensor, error)
 	Update(ctx context.Context, deviceID, id *uuid.UUID, api *model.SensorUpdateRequest) (*model.Sensor, error)
 	Delete(ctx context.Context, deviceID, id *uuid.UUID) error
@@ -55,7 +55,7 @@ func (d *sensorDomain) GetAll(ctx context.Context, deviceID *uuid.UUID) ([]model
 	return sensors, nil
 }
 
-func (d *sensorDomain) GetByID(ctx context.Context, deviceID, id *uuid.UUID) (*model.Sensor, error) {
+func (d *sensorDomain) GetByID(ctx context.Context, limit int64, deviceID, id *uuid.UUID) (*model.Sensor, error) {
 	if _, err := d.deviceRepository.GetByID(ctx, d.db, deviceID); err != nil {
 		return nil, resp.ErrorNotFound("Device not found")
 	}
@@ -67,7 +67,7 @@ func (d *sensorDomain) GetByID(ctx context.Context, deviceID, id *uuid.UUID) (*m
 		return nil, resp.ErrorInternal(err.Error())
 	}
 
-	readings, err := d.sensorReadingRepository.GetBySensorID(ctx, lib.StringUUID(sensor.ID), 100)
+	readings, err := d.sensorReadingRepository.GetBySensorID(ctx, lib.StringUUID(sensor.ID), limit)
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, resp.ErrorInternal(err.Error())
 	}

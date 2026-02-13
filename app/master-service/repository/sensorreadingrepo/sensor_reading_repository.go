@@ -57,8 +57,7 @@ func (r *sensorReadingRepository) GetByID(ctx context.Context, id primitive.Obje
 func (r *sensorReadingRepository) GetBySensorID(ctx context.Context, sensorID string, limit int64) ([]model.SensorReading, error) {
 	var readings []model.SensorReading
 	opts := options.Find().
-		SetLimit(limit).
-		SetSort(bson.M{"timestamp": -1, "created_at": -1})
+		SetLimit(limit)
 	cursor, err := r.coll.Find(ctx, bson.M{"sensor_id": sensorID}, opts)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
