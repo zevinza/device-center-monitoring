@@ -14,7 +14,7 @@ run-device:
 	$(GO) run ./app/device-simulator
 
 swag-master:
-	cd app/master-service && swag init -o ../../docs/master -d ./,../../utils
+	cd app/master-service && swag init -o ../../docs/master -d ./,../../utils,../../entity
 
 
 

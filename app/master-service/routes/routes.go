@@ -52,6 +52,15 @@ func Handle(app *fiber.App, module initialization.Module) {
 	sensorAPI.Put("/:id", sensorController.Update)
 	sensorAPI.Delete("/:id", sensorController.Delete)
 
+	// Sensor Category
+	sensorCategoryController := controllers.SensorCategoryController
+	sensorCategoryAPI := api.Group("/sensor-categories").Use(middleware.SecretKeyAuthentication())
+	sensorCategoryAPI.Get("/", sensorCategoryController.GetAll)
+	sensorCategoryAPI.Post("/", sensorCategoryController.Create)
+	sensorCategoryAPI.Get("/:id", sensorCategoryController.GetByID)
+	sensorCategoryAPI.Put("/:id", sensorCategoryController.Update)
+	sensorCategoryAPI.Delete("/:id", sensorCategoryController.Delete)
+
 	// Sensor Ingest
 	sensorIngestController := controllers.SensorIngestController
 	sensorIngestAPI := api.Group("/sensors").Use(middleware.SecretKeyAuthentication())

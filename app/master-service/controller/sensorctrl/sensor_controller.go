@@ -3,10 +3,10 @@ package sensorctrl
 import (
 	"api/app/master-service/domain/sensordomain"
 	"api/app/master-service/model"
+	"api/lib"
 	"api/utils/resp"
 
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SensorController struct {
@@ -28,9 +28,9 @@ func New(sensorDomain sensordomain.SensorDomain) *SensorController {
 // @Router /devices/{device_id}/sensors [get]
 // @Security TokenKey
 func (c *SensorController) GetAll(ctx *fiber.Ctx) error {
-	sensors, err := c.sensorDomain.GetAll(ctx.Context(), ctx.Params("device_id"))
+	sensors, err := c.sensorDomain.GetAll(ctx.Context(), lib.StrToUUID(ctx.Params("device_id")))
 	if err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorInternal(err.Error()))
+		return resp.ErrorHandler(ctx, err)
 	}
 	return resp.OK(ctx, sensors)
 }
@@ -42,27 +42,23 @@ func (c *SensorController) GetAll(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param device_id path string true "Device ID"
-// @Param sensor body model.SensorCreateRequest true "Body Request"
+// @Param sensor body model.SensorAPI true "Body Request"
 // @Success 201 {object} resp.Response{data=model.Sensor} "Sensor data"
 // @Router /devices/{device_id}/sensors [post]
 // @Security TokenKey
 func (c *SensorController) Create(ctx *fiber.Ctx) error {
-	deviceIDStr := ctx.Params("device_id")
-	deviceID, err := primitive.ObjectIDFromHex(deviceIDStr)
-	if err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorBadRequest("invalid device_id format"))
-	}
+	deviceID := lib.StrToUUID(ctx.Params("device_id"))
 
-	req := new(model.SensorCreateRequest)
-	if err := ctx.BodyParser(req); err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
+	api := new(model.SensorAPI)
+	if err := ctx.BodyParser(api); err != nil {
+		return resp.ErrorHandler(ctx, err)
 	}
 	// Force relationship from route param
-	req.DeviceID = deviceID
+	api.DeviceID = deviceID
 
-	sensor, err := c.sensorDomain.Create(ctx.Context(), req)
+	sensor, err := c.sensorDomain.Create(ctx.Context(), api)
 	if err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
+		return resp.ErrorHandler(ctx, err)
 	}
 	return resp.Created(ctx, sensor)
 }
@@ -74,14 +70,14 @@ func (c *SensorController) Create(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Sensor ID"
+// @Param device_id path string true "Device ID"
 // @Success 200 {object} resp.Response{data=model.Sensor} "Sensor data"
-// @Router /sensors/{id} [get]
+// @Router /devices/{device_id}/sensors/{id} [get]
 // @Security TokenKey
 func (c *SensorController) GetByID(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
-	sensor, err := c.sensorDomain.GetByID(ctx.Context(), id)
+	sensor, err := c.sensorDomain.GetByID(ctx.Context(), lib.StrToUUID(ctx.Params("device_id")), lib.ParamsUUID(ctx))
 	if err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorNotFound(err.Error()))
+		return resp.ErrorHandler(ctx, err)
 	}
 	return resp.OK(ctx, sensor)
 }
@@ -93,19 +89,19 @@ func (c *SensorController) GetByID(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Sensor ID"
+// @Param device_id path string true "Device ID"
 // @Param sensor body model.SensorUpdateRequest true "Body Request"
 // @Success 200 {object} resp.Response{data=model.Sensor} "Sensor data"
-// @Router /sensors/{id} [put]
+// @Router /devices/{device_id}/sensors/{id} [put]
 // @Security TokenKey
 func (c *SensorController) Update(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
-	req := new(model.SensorUpdateRequest)
-	if err := ctx.BodyParser(req); err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
+	api := new(model.SensorUpdateRequest)
+	if err := ctx.BodyParser(api); err != nil {
+		return resp.ErrorHandler(ctx, err)
 	}
-	sensor, err := c.sensorDomain.Update(ctx.Context(), id, req)
+	sensor, err := c.sensorDomain.Update(ctx.Context(), lib.StrToUUID(ctx.Params("device_id")), lib.ParamsUUID(ctx), api)
 	if err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
+		return resp.ErrorHandler(ctx, err)
 	}
 	return resp.OK(ctx, sensor)
 }
@@ -117,13 +113,13 @@ func (c *SensorController) Update(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Sensor ID"
+// @Param device_id path string true "Device ID"
 // @Success 200 {object} resp.Response "Success"
-// @Router /sensors/{id} [delete]
+// @Router /devices/{device_id}/sensors/{id} [delete]
 // @Security TokenKey
 func (c *SensorController) Delete(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
-	if err := c.sensorDomain.Delete(ctx.Context(), id); err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorNotFound(err.Error()))
+	if err := c.sensorDomain.Delete(ctx.Context(), lib.StrToUUID(ctx.Params("device_id")), lib.ParamsUUID(ctx)); err != nil {
+		return resp.ErrorHandler(ctx, err)
 	}
 	return resp.OK(ctx)
 }

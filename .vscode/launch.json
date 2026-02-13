@@ -2,22 +2,33 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch IAM Service",
+      "name": "Launch Master Service",
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceFolder}/app/iam",
+      "program": "${workspaceFolder}/app/master-service",
       "cwd": "${workspaceFolder}",
       "env": {
         "GO111MODULE": "on"
       }
     },
     {
-      "name": "Launch Master Service",
+      "name": "Launch Client Service",
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceFolder}/app/master",
+      "program": "${workspaceFolder}/app/client-service",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "GO111MODULE": "on"
+      }
+    },
+    {
+      "name": "Launch Device Simulator",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/app/device-simulator",
       "cwd": "${workspaceFolder}",
       "env": {
         "GO111MODULE": "on"

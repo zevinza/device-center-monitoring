@@ -81,7 +81,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.DeviceCreateRequest"
+                            "$ref": "#/definitions/model.DeviceAPI"
                         }
                     }
                 ],
@@ -189,7 +189,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SensorCreateRequest"
+                            "$ref": "#/definitions/model.SensorAPI"
                         }
                     }
                 ],
@@ -210,6 +210,167 @@
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/devices/{device_id}/sensors/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "TokenKey": []
+                    }
+                ],
+                "description": "Get a sensor by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sensor"
+                ],
+                "summary": "Get a sensor by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sensor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device ID",
+                        "name": "device_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sensor data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Sensor"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "TokenKey": []
+                    }
+                ],
+                "description": "Update a sensor",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sensor"
+                ],
+                "summary": "Update a sensor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sensor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device ID",
+                        "name": "device_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Body Request",
+                        "name": "sensor",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SensorUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sensor data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Sensor"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "TokenKey": []
+                    }
+                ],
+                "description": "Delete a sensor",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sensor"
+                ],
+                "summary": "Delete a sensor",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sensor ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device ID",
+                        "name": "device_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/Response"
                         }
                     }
                 }
@@ -355,6 +516,238 @@
                 }
             }
         },
+        "/sensor-categories": {
+            "get": {
+                "security": [
+                    {
+                        "TokenKey": []
+                    }
+                ],
+                "description": "Get all sensor categories",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SensorCategory"
+                ],
+                "summary": "Get all sensor categories",
+                "responses": {
+                    "200": {
+                        "description": "List of Sensor Categories",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.SensorCategory"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "TokenKey": []
+                    }
+                ],
+                "description": "Create a new sensor category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SensorCategory"
+                ],
+                "summary": "Create a new sensor category",
+                "parameters": [
+                    {
+                        "description": "Body Request",
+                        "name": "sensor_category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SensorCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Sensor Category data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SensorCategory"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/sensor-categories/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "TokenKey": []
+                    }
+                ],
+                "description": "Get a sensor category by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SensorCategory"
+                ],
+                "summary": "Get a sensor category by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sensor Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sensor Category data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SensorCategory"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "TokenKey": []
+                    }
+                ],
+                "description": "Update a sensor category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SensorCategory"
+                ],
+                "summary": "Update a sensor category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sensor Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Body Request",
+                        "name": "sensor_category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SensorCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sensor Category data",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SensorCategory"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "TokenKey": []
+                    }
+                ],
+                "description": "Delete a sensor category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SensorCategory"
+                ],
+                "summary": "Delete a sensor category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sensor Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/Response"
+                        }
+                    }
+                }
+            }
+        },
         "/sensors/ingest": {
             "post": {
                 "security": [
@@ -382,146 +775,6 @@
                         "schema": {
                             "$ref": "#/definitions/model.SensorIngestRequest"
                         }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "schema": {
-                            "$ref": "#/definitions/Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/sensors/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "TokenKey": []
-                    }
-                ],
-                "description": "Get a sensor by id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Sensor"
-                ],
-                "summary": "Get a sensor by id",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Sensor ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sensor data",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.Sensor"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "TokenKey": []
-                    }
-                ],
-                "description": "Update a sensor",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Sensor"
-                ],
-                "summary": "Update a sensor",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Sensor ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Body Request",
-                        "name": "sensor",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.SensorUpdateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Sensor data",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.Sensor"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "TokenKey": []
-                    }
-                ],
-                "description": "Delete a sensor",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Sensor"
-                ],
-                "summary": "Delete a sensor",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Sensor ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -596,17 +849,14 @@
         "model.Device": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "additional": {
                     "type": "string"
                 },
-                "description": {
-                    "type": "string"
-                },
-                "device_code": {
+                "code": {
                     "description": "Public identifier for simulators",
                     "type": "string"
                 },
-                "id": {
+                "description": {
                     "type": "string"
                 },
                 "is_active": {
@@ -617,20 +867,23 @@
                 },
                 "name": {
                     "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         },
-        "model.DeviceCreateRequest": {
+        "model.DeviceAPI": {
             "type": "object",
             "properties": {
+                "code": {
+                    "description": "Public identifier for simulators",
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
-                "device_code": {
-                    "description": "Optional, auto-generated if not provided",
+                "is_active": {
+                    "type": "boolean"
+                },
+                "location": {
                     "type": "string"
                 },
                 "name": {
@@ -641,14 +894,14 @@
         "model.DeviceUpdateRequest": {
             "type": "object",
             "properties": {
+                "code": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
-                "device_code": {
+                "location": {
                     "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"
@@ -658,43 +911,100 @@
         "model.Sensor": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "additional": {
                     "type": "string"
+                },
+                "category": {
+                    "$ref": "#/definitions/model.SensorCategory"
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "device": {
+                    "$ref": "#/definitions/model.Device"
                 },
                 "device_id": {
-                    "type": "string"
-                },
-                "id": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
-                "type": {
-                    "type": "string"
+                "readings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SensorReading"
+                    }
                 },
                 "unit": {
-                    "type": "string"
-                },
-                "updated_at": {
                     "type": "string"
                 }
             }
         },
-        "model.SensorCreateRequest": {
+        "model.SensorAPI": {
             "type": "object",
             "properties": {
+                "category_id": {
+                    "type": "string"
+                },
                 "device_id": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
-                "type": {
-                    "type": "string"
-                },
                 "unit": {
                     "type": "string"
+                }
+            }
+        },
+        "model.SensorCategory": {
+            "type": "object",
+            "required": [
+                "code",
+                "default_unit",
+                "name"
+            ],
+            "properties": {
+                "additional": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "default_unit": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "units": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SensorCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "default_unit": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "units": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -711,9 +1021,34 @@
                 "timestamp": {
                     "type": "string"
                 },
-                "value": {
+                "value": {}
+            }
+        },
+        "model.SensorReading": {
+            "type": "object",
+            "properties": {
+                "created_at": {
                     "type": "string"
-                }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "retry_count": {
+                    "type": "integer"
+                },
+                "sensor_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "value": {}
             }
         },
         "model.SensorUpdateRequest": {

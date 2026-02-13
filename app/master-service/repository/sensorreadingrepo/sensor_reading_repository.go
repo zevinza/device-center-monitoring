@@ -3,6 +3,7 @@ package sensorreadingrepo
 import (
 	"api/app/master-service/model"
 	"api/constant"
+	"api/lib"
 	"context"
 	"errors"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 type SensorReadingRepository interface {
 	Create(ctx context.Context, reading *model.SensorReading) error
 	GetByID(ctx context.Context, id primitive.ObjectID) (*model.SensorReading, error)
+	GetBySensorID(ctx context.Context, sensorID string) ([]model.SensorReading, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error
 	IncrementRetryCount(ctx context.Context, id primitive.ObjectID) (int, error)
 }
@@ -30,17 +32,11 @@ func New(db *mongo.Database) SensorReadingRepository {
 }
 
 func (r *sensorReadingRepository) Create(ctx context.Context, reading *model.SensorReading) error {
-	now := time.Now().UTC()
 	if reading.ID.IsZero() {
 		reading.ID = primitive.NewObjectID()
 	}
-	if reading.CreatedAt.IsZero() {
-		reading.CreatedAt = now
-	}
-	reading.UpdatedAt = now
-	if reading.Status == "" {
-		reading.Status = constant.SensorReadingStatus_Pending
-	}
+	reading.CreatedAt = lib.TimeNow()
+	reading.UpdatedAt = lib.TimeNow()
 
 	_, err := r.coll.InsertOne(ctx, reading)
 	return err
@@ -56,6 +52,26 @@ func (r *sensorReadingRepository) GetByID(ctx context.Context, id primitive.Obje
 		return nil, err
 	}
 	return &out, nil
+}
+
+func (r *sensorReadingRepository) GetBySensorID(ctx context.Context, sensorID string) ([]model.SensorReading, error) {
+	var readings []model.SensorReading
+	cursor, err := r.coll.Find(ctx, bson.M{"sensor_id": sensorID})
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf("sensor readings not found")
+		}
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var reading model.SensorReading
+		if err := cursor.Decode(&reading); err != nil {
+			return nil, err
+		}
+		readings = append(readings, reading)
+	}
+	return readings, nil
 }
 
 func (r *sensorReadingRepository) UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error {

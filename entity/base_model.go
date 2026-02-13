@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// Base represents the base model with common fields for all entities
+// @Description Base model with common fields (ID, timestamps, soft delete)
 type Base struct {
 	ID         *uuid.UUID     `json:"id,omitempty" gorm:"primaryKey;unique;type:varchar(36);not null" format:"uuid" swaggerignore:"true"`
 	CreatedAt  *time.Time     `json:"created_at,omitempty" gorm:"type:timestamptz" format:"date-time" swaggerignore:"true"`

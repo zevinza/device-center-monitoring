@@ -3,6 +3,7 @@ package model
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -11,16 +12,15 @@ type SensorReading struct {
 	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	CreatedAt  time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt  time.Time          `bson:"updated_at" json:"updated_at"`
-	DeviceID   primitive.ObjectID `bson:"device_id" json:"device_id"`
-	SensorID   primitive.ObjectID `bson:"sensor_id" json:"sensor_id"`
-	Value      string             `bson:"value" json:"value"`
-	Timestamp  time.Time          `bson:"timestamp" json:"timestamp"`
+	SensorID   *uuid.UUID         `bson:"sensor_id" json:"sensor_id"`
+	Value      any                `bson:"value" json:"value"`
+	Timestamp  *time.Time          `bson:"timestamp" json:"timestamp"`
 	Status     string             `bson:"status" json:"status"`
 	RetryCount int                `bson:"retry_count" json:"retry_count"`
 }
 
 type SensorIngestRequest struct {
-	SensorID  string     `json:"sensor_id" validate:"required"`
-	Value     string     `json:"value" validate:"required"`
+	SensorID  *uuid.UUID `json:"sensor_id" validate:"required"`
+	Value     any        `json:"value" validate:"required"`
 	Timestamp *time.Time `json:"timestamp"`
 }

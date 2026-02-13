@@ -63,9 +63,9 @@ func receiveSensorData(c *fiber.Ctx) error {
 
 	log.Printf("[CLIENT] Received sensor data:")
 	log.Printf("  ReadingID: %s", req.ID)
-	log.Printf("  Device: %s (Code: %s, ID: %s)", req.Device.Name, req.Device.DeviceCode, req.Device.ID)
+	log.Printf("  Device: %s (Code: %s, ID: %s)", req.Device.Name, req.Device.Code, req.Device.ID)
 	if req.Sensor != nil {
-		log.Printf("  Sensor: %s (ID: %s, Type: %s)", req.Sensor.Name, req.Sensor.ID, req.Sensor.Type)
+		log.Printf("  Sensor: %s (ID: %s, Unit: %s)", req.Sensor.Name, req.Sensor.ID, req.Sensor.Unit)
 	}
 	log.Printf("  Value: %s %s", req.Value, req.Sensor.Unit)
 	log.Printf("  Timestamp: %s", req.Timestamp.Format(time.RFC3339))

@@ -6,122 +6,79 @@ import (
 	"api/lib"
 	"api/utils/resp"
 	"context"
-	"errors"
 	"strings"
-	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type DeviceDomain interface {
 	GetAll(ctx context.Context) ([]model.Device, error)
-	GetByID(ctx context.Context, id string) (*model.Device, error)
-	Create(ctx context.Context, req *model.DeviceCreateRequest) (*model.Device, error)
-	Update(ctx context.Context, id string, req *model.DeviceUpdateRequest) (*model.Device, error)
-	Delete(ctx context.Context, id string) error
+	GetByID(ctx context.Context, id *uuid.UUID) (*model.Device, error)
+	Create(ctx context.Context, req *model.DeviceAPI) (*model.Device, error)
+	Update(ctx context.Context, id *uuid.UUID, req *model.DeviceUpdateRequest) (*model.Device, error)
+	Delete(ctx context.Context, id *uuid.UUID) error
 }
 
 type deviceDomain struct {
+	db               *gorm.DB
 	deviceRepository devicerepo.DeviceRepository
 }
 
-func New(deviceRepository devicerepo.DeviceRepository) DeviceDomain {
-	return &deviceDomain{deviceRepository: deviceRepository}
+func New(db *gorm.DB, deviceRepository devicerepo.DeviceRepository) DeviceDomain {
+	return &deviceDomain{
+		db:               db,
+		deviceRepository: deviceRepository,
+	}
 }
 
 func (d *deviceDomain) GetAll(ctx context.Context) ([]model.Device, error) {
-	devices, err := d.deviceRepository.FindAll(ctx, 0)
+	devices, err := d.deviceRepository.GetAll(ctx, d.db)
 	if err != nil {
 		return nil, resp.ErrorInternal(err.Error())
 	}
 	return devices, nil
 }
 
-func (d *deviceDomain) GetByID(ctx context.Context, id string) (*model.Device, error) {
-	oid, err := lib.HexToObjectID(id)
-	if err != nil {
-		return nil, resp.ErrorNotFound(err.Error())
-	}
-	device, err := d.deviceRepository.GetByID(ctx, oid)
+func (d *deviceDomain) GetByID(ctx context.Context, id *uuid.UUID) (*model.Device, error) {
+	device, err := d.deviceRepository.GetByID(ctx, d.db, id)
 	if err != nil {
 		return nil, resp.ErrorInternal(err.Error())
 	}
 	return device, nil
 }
 
-func (d *deviceDomain) Create(ctx context.Context, req *model.DeviceCreateRequest) (*model.Device, error) {
+func (d *deviceDomain) Create(ctx context.Context, req *model.DeviceAPI) (*model.Device, error) {
 	if strings.TrimSpace(req.Name) == "" {
-		return nil, errors.New("device name is required")
-	}
-	now := time.Now().UTC()
-
-	deviceCode := ""
-	if req.DeviceCode != nil && strings.TrimSpace(*req.DeviceCode) != "" {
-		deviceCode = strings.TrimSpace(*req.DeviceCode)
-		// Check if device_code already exists
-		if existing, _ := d.deviceRepository.FindByCode(ctx, deviceCode); existing != nil {
-			return nil, errors.New("device_code already exists")
-		}
-	} else {
-		deviceCode = "DEV-" + primitive.NewObjectID().Hex()[12:]
+		return nil, resp.ErrorBadRequest("device name is required")
 	}
 
-	device := &model.Device{
-		ID:          primitive.NewObjectID(),
-		DeviceCode:  deviceCode,
-		Name:        strings.TrimSpace(req.Name),
-		Description: strings.TrimSpace(req.Description),
-		IsActive:    true,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+	device := model.Device{}
+	lib.Merge(req, &device)
+	if device.Code == "" {
+		device.Code = "DEV-" + uuid.New().String()
 	}
-	if err := d.deviceRepository.Create(ctx, device); err != nil {
-		return nil, err
-	}
-	return device, nil
-}
 
-func (d *deviceDomain) Update(ctx context.Context, id string, req *model.DeviceUpdateRequest) (*model.Device, error) {
-	update := map[string]any{}
-	if req.DeviceCode != nil {
-		deviceCode := strings.TrimSpace(*req.DeviceCode)
-		if deviceCode != "" {
-			// Check if device_code already exists (excluding current device)
-			if existing, _ := d.deviceRepository.FindByCode(ctx, deviceCode); existing != nil && existing.ID.Hex() != id {
-				return nil, errors.New("device_code already exists")
-			}
-			update["device_code"] = deviceCode
-		}
-	}
-	if req.Name != nil {
-		update["name"] = strings.TrimSpace(*req.Name)
-	}
-	if req.Description != nil {
-		update["description"] = strings.TrimSpace(*req.Description)
-	}
-	if req.IsActive != nil {
-		update["is_active"] = *req.IsActive
-	}
-	oid, err := lib.HexToObjectID(id)
-	if err != nil {
-		return nil, resp.ErrorNotFound(err.Error())
-	}
-	device, err := d.deviceRepository.Update(ctx, oid, update)
-	if err != nil {
+	if err := d.deviceRepository.Create(ctx, d.db, &device); err != nil {
 		return nil, resp.ErrorInternal(err.Error())
 	}
-	return device, nil
+	return &device, nil
 }
 
-func (d *deviceDomain) Delete(ctx context.Context, id string) error {
-	oid, err := lib.HexToObjectID(id)
-	if err != nil {
+func (d *deviceDomain) Update(ctx context.Context, id *uuid.UUID, req *model.DeviceUpdateRequest) (*model.Device, error) {
+	device := model.Device{}
+	lib.Merge(req, &device)
+	if err := d.deviceRepository.Update(ctx, d.db, &device, id); err != nil {
+		return nil, resp.ErrorInternal(err.Error())
+	}
+	return &device, nil
+}
+
+func (d *deviceDomain) Delete(ctx context.Context, id *uuid.UUID) error {
+	if _, err := d.deviceRepository.GetByID(ctx, d.db, id); err != nil {
 		return resp.ErrorNotFound(err.Error())
 	}
-	if _, err := d.deviceRepository.GetByID(ctx, oid); err != nil {
-		return resp.ErrorNotFound(err.Error())
-	}
-	if err := d.deviceRepository.Delete(ctx, oid); err != nil {
+	if err := d.deviceRepository.Delete(ctx, d.db, id); err != nil {
 		return resp.ErrorInternal(err.Error())
 	}
 	return nil

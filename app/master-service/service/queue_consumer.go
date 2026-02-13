@@ -18,6 +18,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"gorm.io/gorm"
 )
 
 type QueueConsumer interface {
@@ -29,34 +30,25 @@ type queueConsumer struct {
 	deviceRepository  devicerepo.DeviceRepository
 	sensorRepository  sensorrepo.SensorRepository
 	queue             *queue.RedisQueue
+	db                *gorm.DB
 	maxRetries        int
 	backoffBase       int
 }
 
 func NewQueueConsumer(
+	db *gorm.DB,
+	rdb *redis.Client,
 	readingRepository sensorreadingrepo.SensorReadingRepository,
 	deviceRepository devicerepo.DeviceRepository,
 	sensorRepository sensorrepo.SensorRepository,
-	rdb *redis.Client,
 ) QueueConsumer {
-	qName := viper.GetString("REDIS_QUEUE_NAME")
-	dlqName := viper.GetString("REDIS_DLQ_NAME")
-
-	maxRetries := viper.GetInt("MAX_RETRIES")
-	if maxRetries <= 0 {
-		maxRetries = 3
-	}
-
-	backoffBase := viper.GetInt("RETRY_BACKOFF_BASE")
-	if backoffBase <= 0 {
-		backoffBase = 1
-	}
 
 	return &queueConsumer{
+		db:                db,
 		readingRepository: readingRepository,
-		queue:             queue.NewRedisQueue(rdb, qName, dlqName),
-		maxRetries:        maxRetries,
-		backoffBase:       backoffBase,
+		queue:             queue.NewRedisQueue(rdb, viper.GetString("REDIS_QUEUE_NAME"), viper.GetString("REDIS_DLQ_NAME")),
+		maxRetries:        viper.GetInt("MAX_RETRIES"),
+		backoffBase:       viper.GetInt("RETRY_BACKOFF_BASE"),
 		deviceRepository:  deviceRepository,
 		sensorRepository:  sensorRepository,
 	}
@@ -109,21 +101,15 @@ func (qc *queueConsumer) processMessage(ctx context.Context) {
 		return
 	}
 
-	sensor, err := qc.sensorRepository.GetByID(ctx, reading.SensorID)
+	sensor, err := qc.sensorRepository.GetByID(ctx, qc.db, reading.SensorID)
 	if err != nil {
 		log.Printf("Error finding sensor by id: %v", err)
 		return
 	}
 
-	device, err := qc.deviceRepository.GetByID(ctx, reading.DeviceID)
-	if err != nil {
-		log.Printf("Error finding device by id: %v", err)
-		return
-	}
-
 	result := model.SensorIngestResult{
 		SensorReading: *reading,
-		Device:        device,
+		Device:        sensor.Device,
 		Sensor:        sensor,
 	}
 

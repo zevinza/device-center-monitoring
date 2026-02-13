@@ -23,6 +23,7 @@ func init() {
 	env.Load(config.Environment)
 	cache.Connect()
 	database.ConnectMongo()
+	database.Connect()
 }
 
 // @title API
@@ -51,8 +52,6 @@ func main() {
 
 	module := initialization.Init()
 
-	routes.Handle(app, module)
-
 	// Start queue consumer in background
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -73,6 +72,8 @@ func main() {
 			log.Printf("Error shutting down server: %v", err)
 		}
 	}()
+
+	routes.Handle(app, module)
 
 	log.Fatal(app.Listen(":" + viper.GetString("PORT")))
 }

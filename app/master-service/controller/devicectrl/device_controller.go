@@ -3,6 +3,7 @@ package devicectrl
 import (
 	"api/app/master-service/domain/devicedomain"
 	"api/app/master-service/model"
+	"api/lib"
 	"api/utils/resp"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,7 +29,7 @@ func New(domain devicedomain.DeviceDomain) *DeviceController {
 func (c *DeviceController) GetAll(ctx *fiber.Ctx) error {
 	devices, err := c.domain.GetAll(ctx.Context())
 	if err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorInternal(err.Error()))
+		return resp.ErrorHandler(ctx, err)
 	}
 	return resp.OK(ctx, devices)
 }
@@ -44,10 +45,9 @@ func (c *DeviceController) GetAll(ctx *fiber.Ctx) error {
 // @Router /devices/{id} [get]
 // @Security TokenKey
 func (c *DeviceController) GetByID(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
-	device, err := c.domain.GetByID(ctx.Context(), id)
+	device, err := c.domain.GetByID(ctx.Context(), lib.ParamsUUID(ctx))
 	if err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorNotFound(err.Error()))
+		return resp.ErrorHandler(ctx, err)
 	}
 	return resp.OK(ctx, device)
 }
@@ -58,19 +58,21 @@ func (c *DeviceController) GetByID(ctx *fiber.Ctx) error {
 // @Tags Device
 // @Accept json
 // @Produce json
-// @Param device body model.DeviceCreateRequest true "Body Request"
+// @Param device body model.DeviceAPI true "Body Request"
 // @Success 201 {object} resp.Response{data=model.Device} "Device data"
 // @Router /devices [post]
 // @Security TokenKey
 func (c *DeviceController) Create(ctx *fiber.Ctx) error {
-	req := new(model.DeviceCreateRequest)
-	if err := ctx.BodyParser(req); err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
+	api := new(model.DeviceAPI)
+	if err := ctx.BodyParser(api); err != nil {
+		return resp.ErrorHandler(ctx, err)
 	}
-	device, err := c.domain.Create(ctx.Context(), req)
+
+	device, err := c.domain.Create(ctx.Context(), api)
 	if err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
+		return resp.ErrorHandler(ctx, err)
 	}
+
 	return resp.Created(ctx, device)
 }
 
@@ -86,14 +88,13 @@ func (c *DeviceController) Create(ctx *fiber.Ctx) error {
 // @Router /devices/{id} [put]
 // @Security TokenKey
 func (c *DeviceController) Update(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
 	req := new(model.DeviceUpdateRequest)
 	if err := ctx.BodyParser(req); err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
+		return resp.ErrorHandler(ctx, err)
 	}
-	device, err := c.domain.Update(ctx.Context(), id, req)
+	device, err := c.domain.Update(ctx.Context(), lib.ParamsUUID(ctx), req)
 	if err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorBadRequest(err.Error()))
+		return resp.ErrorHandler(ctx, err)
 	}
 	return resp.OK(ctx, device)
 }
@@ -109,9 +110,8 @@ func (c *DeviceController) Update(ctx *fiber.Ctx) error {
 // @Router /devices/{id} [delete]
 // @Security TokenKey
 func (c *DeviceController) Delete(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
-	if err := c.domain.Delete(ctx.Context(), id); err != nil {
-		return resp.ErrorHandler(ctx, resp.ErrorNotFound(err.Error()))
+	if err := c.domain.Delete(ctx.Context(), lib.ParamsUUID(ctx)); err != nil {
+		return resp.ErrorHandler(ctx, err)
 	}
 	return resp.OK(ctx)
 }

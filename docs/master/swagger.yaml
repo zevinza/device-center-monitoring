@@ -40,14 +40,12 @@ definitions:
     type: object
   model.Device:
     properties:
-      created_at:
+      additional:
         type: string
-      description:
-        type: string
-      device_code:
+      code:
         description: Public identifier for simulators
         type: string
-      id:
+      description:
         type: string
       is_active:
         type: boolean
@@ -55,57 +53,97 @@ definitions:
         type: string
       name:
         type: string
-      updated_at:
-        type: string
     type: object
-  model.DeviceCreateRequest:
+  model.DeviceAPI:
     properties:
+      code:
+        description: Public identifier for simulators
+        type: string
       description:
         type: string
-      device_code:
-        description: Optional, auto-generated if not provided
+      is_active:
+        type: boolean
+      location:
         type: string
       name:
         type: string
     type: object
   model.DeviceUpdateRequest:
     properties:
+      code:
+        type: string
       description:
         type: string
-      device_code:
+      location:
         type: string
-      is_active:
-        type: boolean
       name:
         type: string
     type: object
   model.Sensor:
     properties:
-      created_at:
+      additional:
         type: string
+      category:
+        $ref: '#/definitions/model.SensorCategory'
+      category_id:
+        type: string
+      device:
+        $ref: '#/definitions/model.Device'
       device_id:
-        type: string
-      id:
         type: string
       name:
         type: string
-      type:
-        type: string
+      readings:
+        items:
+          $ref: '#/definitions/model.SensorReading'
+        type: array
       unit:
-        type: string
-      updated_at:
         type: string
     type: object
-  model.SensorCreateRequest:
+  model.SensorAPI:
     properties:
+      category_id:
+        type: string
       device_id:
         type: string
       name:
         type: string
-      type:
-        type: string
       unit:
         type: string
+    type: object
+  model.SensorCategory:
+    properties:
+      additional:
+        type: string
+      code:
+        type: string
+      default_unit:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      units:
+        type: string
+    required:
+    - code
+    - default_unit
+    - name
+    type: object
+  model.SensorCategoryRequest:
+    properties:
+      code:
+        type: string
+      default_unit:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      units:
+        items:
+          type: string
+        type: array
     type: object
   model.SensorIngestRequest:
     properties:
@@ -113,11 +151,28 @@ definitions:
         type: string
       timestamp:
         type: string
-      value:
-        type: string
+      value: {}
     required:
     - sensor_id
     - value
+    type: object
+  model.SensorReading:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      retry_count:
+        type: integer
+      sensor_id:
+        type: string
+      status:
+        type: string
+      timestamp:
+        type: string
+      updated_at:
+        type: string
+      value: {}
     type: object
   model.SensorUpdateRequest:
     properties:
@@ -171,7 +226,7 @@ paths:
         name: device
         required: true
         schema:
-          $ref: '#/definitions/model.DeviceCreateRequest'
+          $ref: '#/definitions/model.DeviceAPI'
       produces:
       - application/json
       responses:
@@ -234,7 +289,7 @@ paths:
         name: sensor
         required: true
         schema:
-          $ref: '#/definitions/model.SensorCreateRequest'
+          $ref: '#/definitions/model.SensorAPI'
       produces:
       - application/json
       responses:
@@ -250,6 +305,104 @@ paths:
       security:
       - TokenKey: []
       summary: Create a new sensor for a device
+      tags:
+      - Sensor
+  /devices/{device_id}/sensors/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a sensor
+      parameters:
+      - description: Sensor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/Response'
+      security:
+      - TokenKey: []
+      summary: Delete a sensor
+      tags:
+      - Sensor
+    get:
+      consumes:
+      - application/json
+      description: Get a sensor by id
+      parameters:
+      - description: Sensor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sensor data
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Sensor'
+              type: object
+      security:
+      - TokenKey: []
+      summary: Get a sensor by id
+      tags:
+      - Sensor
+    put:
+      consumes:
+      - application/json
+      description: Update a sensor
+      parameters:
+      - description: Sensor ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      - description: Body Request
+        in: body
+        name: sensor
+        required: true
+        schema:
+          $ref: '#/definitions/model.SensorUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sensor data
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Sensor'
+              type: object
+      security:
+      - TokenKey: []
+      summary: Update a sensor
       tags:
       - Sensor
   /devices/{id}:
@@ -335,13 +488,65 @@ paths:
       summary: Update a device
       tags:
       - Device
-  /sensors/{id}:
+  /sensor-categories:
+    get:
+      consumes:
+      - application/json
+      description: Get all sensor categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of Sensor Categories
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.SensorCategory'
+                  type: array
+              type: object
+      security:
+      - TokenKey: []
+      summary: Get all sensor categories
+      tags:
+      - SensorCategory
+    post:
+      consumes:
+      - application/json
+      description: Create a new sensor category
+      parameters:
+      - description: Body Request
+        in: body
+        name: sensor_category
+        required: true
+        schema:
+          $ref: '#/definitions/model.SensorCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Sensor Category data
+          schema:
+            allOf:
+            - $ref: '#/definitions/Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SensorCategory'
+              type: object
+      security:
+      - TokenKey: []
+      summary: Create a new sensor category
+      tags:
+      - SensorCategory
+  /sensor-categories/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a sensor
+      description: Delete a sensor category
       parameters:
-      - description: Sensor ID
+      - description: Sensor Category ID
         in: path
         name: id
         required: true
@@ -355,15 +560,15 @@ paths:
             $ref: '#/definitions/Response'
       security:
       - TokenKey: []
-      summary: Delete a sensor
+      summary: Delete a sensor category
       tags:
-      - Sensor
+      - SensorCategory
     get:
       consumes:
       - application/json
-      description: Get a sensor by id
+      description: Get a sensor category by id
       parameters:
-      - description: Sensor ID
+      - description: Sensor Category ID
         in: path
         name: id
         required: true
@@ -372,52 +577,52 @@ paths:
       - application/json
       responses:
         "200":
-          description: Sensor data
+          description: Sensor Category data
           schema:
             allOf:
             - $ref: '#/definitions/Response'
             - properties:
                 data:
-                  $ref: '#/definitions/model.Sensor'
+                  $ref: '#/definitions/model.SensorCategory'
               type: object
       security:
       - TokenKey: []
-      summary: Get a sensor by id
+      summary: Get a sensor category by id
       tags:
-      - Sensor
+      - SensorCategory
     put:
       consumes:
       - application/json
-      description: Update a sensor
+      description: Update a sensor category
       parameters:
-      - description: Sensor ID
+      - description: Sensor Category ID
         in: path
         name: id
         required: true
         type: string
       - description: Body Request
         in: body
-        name: sensor
+        name: sensor_category
         required: true
         schema:
-          $ref: '#/definitions/model.SensorUpdateRequest'
+          $ref: '#/definitions/model.SensorCategoryRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Sensor data
+          description: Sensor Category data
           schema:
             allOf:
             - $ref: '#/definitions/Response'
             - properties:
                 data:
-                  $ref: '#/definitions/model.Sensor'
+                  $ref: '#/definitions/model.SensorCategory'
               type: object
       security:
       - TokenKey: []
-      summary: Update a sensor
+      summary: Update a sensor category
       tags:
-      - Sensor
+      - SensorCategory
   /sensors/ingest:
     post:
       consumes:

@@ -3,6 +3,7 @@ package model
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -13,34 +14,35 @@ type SensorReceiveRequest struct {
 }
 
 type SensorReading struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	CreatedAt  time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt  time.Time          `bson:"updated_at" json:"updated_at"`
-	DeviceID   primitive.ObjectID `bson:"device_id" json:"device_id"`
-	SensorID   primitive.ObjectID `bson:"sensor_id" json:"sensor_id"`
-	Value      string             `bson:"value" json:"value"`
-	Timestamp  time.Time          `bson:"timestamp" json:"timestamp"`
-	Status     string             `bson:"status" json:"status"`
-	RetryCount int                `bson:"retry_count" json:"retry_count"`
+	ID         primitive.ObjectID `json:"id"`
+	CreatedAt  time.Time          `json:"created_at"`
+	UpdatedAt  time.Time          `json:"updated_at"`
+	SensorID   *uuid.UUID         `json:"sensor_id"`
+	Value      any                `json:"value"`
+	Timestamp  *time.Time         `json:"timestamp"`
+	Status     string             `json:"status"`
+	RetryCount int                `json:"retry_count"`
 }
 
 type Device struct {
-	ID          primitive.ObjectID `bson:"_id" json:"id"`
-	DeviceCode  string             `bson:"device_code" json:"device_code"`
-	Name        string             `bson:"name" json:"name"`
-	Description string             `bson:"description,omitempty" json:"description,omitempty"`
-	Location    string             `bson:"location,omitempty" json:"location,omitempty"`
-	IsActive    bool               `bson:"is_active" json:"is_active"`
-	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
+	ID          *uuid.UUID `json:"id"`
+	Code        string     `json:"code"`
+	Name        string     `json:"name"`
+	Description *string    `json:"description,omitempty"`
+	Location    *string    `json:"location,omitempty"`
+	IsActive    bool       `json:"is_active"`
+	CreatedAt   *time.Time `json:"created_at,omitempty"`
+	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
+	Additional  *string    `json:"additional,omitempty"`
 }
 
 type Sensor struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	DeviceID  primitive.ObjectID `bson:"device_id" json:"device_id"`
-	Name      string             `bson:"name" json:"name"`
-	Unit      string             `bson:"unit" json:"unit"`
-	Type      string             `bson:"type" json:"type"`
-	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
+	ID         *uuid.UUID `json:"id"`
+	DeviceID   *uuid.UUID `json:"device_id"`
+	CategoryID *uuid.UUID `json:"category_id"`
+	Name       string     `json:"name"`
+	Unit       string     `json:"unit"`
+	CreatedAt  *time.Time `json:"created_at,omitempty"`
+	UpdatedAt  *time.Time `json:"updated_at,omitempty"`
+	Additional *string    `json:"additional,omitempty"`
 }
