@@ -14,6 +14,7 @@ import (
 type SensorRepository interface {
 	entity.BaseRepository[model.Sensor]
 	GetByDeviceID(ctx context.Context, db *gorm.DB, deviceID *uuid.UUID) ([]model.Sensor, error)
+	GetByNameAndDeviceID(ctx context.Context, db *gorm.DB, name string, deviceID *uuid.UUID, excludeID *uuid.UUID) (*model.Sensor, error)
 }
 
 type sensorRepository struct {
@@ -57,4 +58,19 @@ func (r *sensorRepository) GetByDeviceID(ctx context.Context, db *gorm.DB, devic
 		return nil, query.Error
 	}
 	return sensors, nil
+}
+
+func (r *sensorRepository) GetByNameAndDeviceID(ctx context.Context, db *gorm.DB, name string, deviceID *uuid.UUID, excludeID *uuid.UUID) (*model.Sensor, error) {
+	var sensor model.Sensor
+	query := db.WithContext(ctx).Where("name = ? AND device_id = ?", name, deviceID)
+	if excludeID != nil {
+		query = query.Where("id != ?", excludeID)
+	}
+	if err := query.First(&sensor).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("sensor not found")
+		}
+		return nil, err
+	}
+	return &sensor, nil
 }

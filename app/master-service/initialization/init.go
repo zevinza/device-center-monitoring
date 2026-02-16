@@ -55,7 +55,7 @@ func InitDomains(pgdb *gorm.DB, rdb *redis.Client, repositories Repository) Doma
 	queue := queue.NewRedisQueue(rdb, viper.GetString("REDIS_QUEUE_NAME"), viper.GetString("REDIS_DLQ_NAME"))
 
 	return Domain{
-		DeviceDomain:         devicedomain.New(pgdb, repositories.DeviceRepository),
+		DeviceDomain:         devicedomain.New(pgdb, repositories.DeviceRepository, repositories.SensorRepository),
 		SensorDomain:         sensordomain.New(pgdb, repositories.SensorRepository, repositories.DeviceRepository, repositories.SensorReadingRepository, repositories.SensorCategoryRepository),
 		SensorCategoryDomain: sensorcategorydomain.New(pgdb, repositories.SensorCategoryRepository),
 		SensorReadingDomain:  sensorreadingdomain.New(pgdb, queue, repositories.SensorReadingRepository, repositories.DeviceRepository, repositories.SensorRepository),

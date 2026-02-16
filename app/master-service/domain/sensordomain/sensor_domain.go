@@ -95,6 +95,16 @@ func (d *sensorDomain) Create(ctx context.Context, api *model.SensorAPI) (*model
 		return nil, resp.ErrorBadRequest("sensor name is required")
 	}
 
+	// Validate that sensor name is unique within the device
+	existingSensor, err := d.sensorRepository.GetByNameAndDeviceID(ctx, d.db, sensor.Name, api.DeviceID, nil)
+	if err == nil && existingSensor != nil {
+		return nil, resp.ErrorConflict("sensor name already exists for this device")
+	}
+	// If error is not "sensor not found", it's a database error
+	if err != nil && err.Error() != "sensor not found" {
+		return nil, resp.ErrorInternal(err.Error())
+	}
+
 	// Validate and set unit
 	unitNames := category.GetUnitNames()
 	if sensor.Unit == "" {
@@ -137,6 +147,18 @@ func (d *sensorDomain) Update(ctx context.Context, deviceID, id *uuid.UUID, api 
 
 	sensor := model.Sensor{}
 	lib.Merge(api, &sensor)
+
+	// Validate that sensor name is unique within the device (if name is being updated)
+	if api.Name != nil && *api.Name != "" {
+		existingSensor, err := d.sensorRepository.GetByNameAndDeviceID(ctx, d.db, *api.Name, deviceID, id)
+		if err == nil && existingSensor != nil {
+			return nil, resp.ErrorConflict("sensor name already exists for this device")
+		}
+		// If error is not "sensor not found", it's a database error
+		if err != nil && err.Error() != "sensor not found" {
+			return nil, resp.ErrorInternal(err.Error())
+		}
+	}
 
 	if api.Unit != nil {
 		unitNames := category.GetUnitNames()

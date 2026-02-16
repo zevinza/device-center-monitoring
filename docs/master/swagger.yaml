@@ -350,6 +350,10 @@ paths:
         name: device_id
         required: true
         type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
